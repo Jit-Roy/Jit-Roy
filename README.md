@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/sleepy-boy.gif" alt="Anime boy with headphones dozing off, Z's floating up, then waking with a start" width="240">
+  <img src="assets/sleepy_boy.gif" alt="Anime boy with headphones dozing off, Z's floating up, then waking with a start" width="240">
   <br>
   <code>VISUAL FEED // SUBJECT: DORMANT (INTERMITTENTLY AWAKE)</code>
 </p>
