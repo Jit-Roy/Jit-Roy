@@ -1,56 +1,67 @@
-<p align="center">
-  <img src="assets/sleepy_boy.gif" alt="Anime boy with headphones dozing off, Z's floating up, then waking with a start" width="240">
-  <br>
-  <code>VISUAL FEED // SUBJECT: DORMANT (INTERMITTENTLY AWAKE)</code>
+<div align="center">
+  <img src="assets/sleepy_boy.gif" alt="Anime boy with headphones dozing off, then waking up" width="220">
+
+  # Hi, I'm Jit Roy 👋
+
+  **AI/ML developer building practical tools for generative models.**
+
+  I like making large models more accessible on everyday hardware—especially when
+  memory limits are the main obstacle.
+
+  <p>
+    <a href="https://github.com/Jit-Roy?tab=repositories">Projects</a>
+    ·
+    <a href="https://github.com/Jit-Roy/weellm">WeeLLM</a>
+    ·
+    <a href="https://github.com/Jit-Roy?tab=followers">Follow</a>
+  </p>
+</div>
+
+---
+
+## What I'm working on
+
+- **Efficient inference:** reducing the hardware barrier for large diffusion models.
+- **Generative AI:** experimenting with image and video generation workflows.
+- **Developer tools:** building open-source projects that are useful, understandable,
+  and easy to run.
+
+## Featured project
+
+### [WeeLLM](https://github.com/Jit-Roy/weellm)
+
+Layer-streaming inference for large diffusion models, designed to run on GPUs with
+limited VRAM without relying on quantization.
+
+<p>
+  <a href="https://github.com/Jit-Roy/weellm">
+    <img src="https://img.shields.io/github/stars/Jit-Roy/weellm?style=flat&label=stars" alt="WeeLLM GitHub stars">
+  </a>
+  <a href="https://github.com/Jit-Roy/weellm/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/Jit-Roy/weellm?style=flat" alt="MIT License">
+  </a>
+  <a href="https://github.com/Jit-Roy/weellm">
+    <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat&logo=python&logoColor=white" alt="Python 3.10 or newer">
+  </a>
 </p>
 
-```text
-[ INCOMING TRANSMISSION ]
+## Tools I use
 
-ORIGIN         : HIGH ORBIT, PLANET ERID
-STAR SYSTEM    : 40 ERIDANI
-CURRENT VECTOR : OUTBOUND - PEGASUS GALAXY
-DESTINATION    : EARTH
-SIGNAL STATUS  : CRITICAL (TRANSMITTER BATTERY AT 2%)
-
-Hello... is anyone receiving this?
-
-[ static interference ]
-
-It's been a long journey.
-I'm not sure how much longer this transmitter will last,
-but if this message reaches Earth, perhaps the journey
-wasn't entirely in vain.
-```
-
----
-
-<h1 align="center">JIT ROY</h1>
-
-<p align="center"><i>Exploring the unknown...</i></p>
-
-In the world of robots, I am trying to teach them how to think like human.
-
----
-
-## [ MISSION LOG ]
-
-Lost
-
----
-
-```text
-[ OUTGOING TRANSMISSION ]
-
-I don't know if this message will ever make it home.
-Perhaps the signal will fade somewhere between the stars.
-Perhaps someone will find it long after I'm gone.
-But until then, I'll keep exploring.
-I'll keep building.
-And I'll keep searching for what's beyond the horizon.
-```
-
-<p align="center">
-  <code>[ SIGNAL LOST ]</code><br>
-  <code>END OF TRANSMISSION.</code>
+<p>
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" alt="PyTorch">
+  <img src="https://img.shields.io/badge/Hugging%20Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" alt="Hugging Face">
+  <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
 </p>
+
+## A little more
+
+- I enjoy working close to the model and the hardware.
+- I care about performance, reproducibility, and approachable documentation.
+- I am always exploring better ways to make generative AI run locally.
+
+---
+
+<div align="center">
+  <i>Exploring the unknown, one model at a time.</i>
+</div>
