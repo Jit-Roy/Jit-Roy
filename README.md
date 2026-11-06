@@ -1,10 +1,5 @@
 <div align="center">
   <img src="assets/sleepy_boy.gif" alt="Anime boy with headphones dozing off, then waking up" width="220">
-  <br>
-  <code>VISUAL FEED // SUBJECT: DORMANT (INTERMITTENTLY AWAKE)</code>
-
-  <br><br>
-
   <a href="https://jit-roy.github.io/Jit-Roy/">
     <img src="https://img.shields.io/badge/TRANSMITTER-2%25%20CRITICAL-red?style=for-the-badge&logo=satellite&logoColor=white" alt="Transmitter Battery: 2% Critical" />
   </a>
@@ -65,41 +60,15 @@
 earth@explorer-1:~$ _
 ```
 
----
-
 <div align="center">
 
 ## 🛰️ The terminal is open
 
 The message made it. The rest of the records are still on the ship, locked, and the battery is at 2%. Someone on Earth has to open the connection.
 
-### **That someone is you.**
+[**[ ⚡ INITIALIZE REMOTE UPLINK ]**](https://jit-roy.github.io/Jit-Roy/)
 
-[**OPEN THE TERMINAL**](https://jit-roy.github.io/Jit-Roy/)
-
-</div>
-
----
-
-### 📡 Before you connect
-
-> It is a real shell on a ship's computer, not a menu. Everything is solved with single-line commands, the way you would in a terminal.
-
-```bash
-earth@explorer-1:~$ ls
-earth@explorer-1:~$ cat README.txt
-earth@explorer-1:~$ help
-```
-
-* **Read before you act.** The answers are in the files.
-* **Pipes work:** `command | command | command`.
-* **Stuck?** Type `hint`. You get three nudges per step, and the last one gives it away.
-* **Nothing to install.** It runs in your browser on desktop and mobile.
-
----
-
-<div align="center">
-
-`[ SIGNAL STATUS: CRITICAL ]`
+> *"Whoever you are, on whichever side of the distance: good luck.*  
+> *Read before you act, keep looking at the edges, and listen to the end."*  
 
 </div>

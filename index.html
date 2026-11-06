@@ -299,30 +299,30 @@
         var FS = D({
             home: D({
                 explorer: D({
-                    'README.txt': ["EXPLORER-1 // ONBOARD COMPUTER // REMOTE SHELL", "", "To whoever is on Earth: you are reading this, so my first message arrived.", "", "That message was only the beginning. Everything else I recorded here is", "still on this machine, and I cannot push it to you myself. The transmitter", "only has enough left for a single burst, and I already spent it.", "", "So the rest is yours to pull. I left an archive queued in ship/comms/.", "It is locked, and the link cannot hold at 2% battery. In order:", "", "  1. Give the ship enough power to hold a connection.", "  2. Find the word that unlocks the archive. The civilization gave it to me.", "  3. Open a channel that can carry the downlink.", "", "Everything you need is in this filesystem.", "Type \"help\" for commands. Read before you act."].join('\n'),
+                    'README.txt': ["EXPLORER-1 // ONBOARD COMPUTER // REMOTE SHELL", "", "To whoever is on Earth: you are reading this, so my first message arrived.", "", "That message was only the beginning. Everything else I recorded here is", "still on this machine, and I cannot push it to you myself. The transmitter", "only had enough left for a single burst, and I already spent it.", "", "So the rest is yours to pull. I left an archive queued in ship/comms/.", "It is locked, and the link cannot hold at 2% battery. In order:", "", "  1. Give the ship enough power to hold a connection.", "  2. Find the word that unlocks the archive. The civilization gave it to me.", "  3. Open a channel that can carry the downlink.", "", "Everything you need is in this filesystem.", "Type \"help\" for commands. Read before you act."].join('\n'),
                     '.signal': ["You found the dotfile. Most people never look.", "", "Whoever you are, on whichever side of the distance:", "they are not dangerous. They are curious. Like us.", "", "Keep looking at the edges."].join('\n'),
                     '.shell_history': ["bin -d contact/pulse_001.sig        # nonsense. why is it all shifted?", "recharge cell-a --source solar      # nothing happened", "recharge cell-a --source reactor    # sparks, smell of burning", "cat logs/day-0204.log", "cat logs/day-0311.log", "connect --channel 1                 # static. only static."].join('\n'),
                     journal: D({
                         '01_departure.txt': ["I left Earth the way people leave a conversation they are sure will continue.", "", "Everyone asked what I was looking for.", "I never had a good answer. I only knew I could not stay where the map ended.", "", "Other people read the edge of a chart as a warning.", "I read it as an invitation nobody had bothered to sign."].join('\n'),
-                        '02_arrival.txt': ["Erid is not what the survey said.", "", "I set the lander down at the edge of the lattice fields. No forests.", "No oceans. Rows of tall crystalline lattices run to the horizon, and", "every one of them hums, very faintly, at the edge of hearing.", "", "The orbiter keeps relaying my signal home. The sensors call the hum geology.", "Geology does not hum in tune."].join('\n'),
-                        '03_first_contact.txt': ["Night 61. I sent a signal at the lattice, mostly out of boredom.", "It answered.", "", "Not with words. With pulses: long, short, long, long.", "I recorded all of it. I have not stopped recording since.", "", "Not human. Not biological. And undeniably intelligent."].join('\n'),
-                        '04_understanding.txt': ["I have spent what feels like a lifetime trying to understand them.", "", "Every reply comes back shifted, the same way, every time.", "At first I called it noise. Noise does not repeat itself on purpose.", "", "They learn quickly. Perhaps they are beginning to understand me too."].join('\n'),
-                        '05_last_entry.txt': ["The first message is away. I do not know if anyone will answer.", "", "The ship is failing. The transmitter is barely holding together,", "and the distance between us is almost impossible to comprehend.", "Even if someone answers, I will not live long enough to hear it.", "I have made peace with that.", "", "I left the terminal open. The records are here, and a few things I could", "not make sense of myself. Perhaps you will understand more than I did.", "", "If Earth ever learns about this place, perhaps our two worlds will find each other.", "And someone will remember that the first hello came from here."].join('\n')
+                        '02_arrival.txt': ["Erid is not what the survey said.", "", "The air is a thin violet haze of methane and ammonia. I have not taken", "my helmet off once, and I will not. No forests, no oceans, no birds.", "I set the lander down at the edge of the lattice fields: rows of tall", "crystalline lattices running to the horizon, each one humming faintly at", "the edge of hearing.", "", "At dusk small lights drift between the lattices, slowly, like they are", "tending them. I have started calling them lanterns.", "", "The sensors call the hum geology. Geology does not hum in tune."].join('\n'),
+                        '03_first_contact.txt': ["Night 61. I sent a signal at the lattice, mostly out of boredom.", "It answered.", "", "Not with words. With pulses: long, short, long, long.", "I recorded all of it. I have not stopped recording since.", "", "The lanterns gathered around the nearest lattice while it replied.", "I do not think that was an accident."].join('\n'),
+                        '04_understanding.txt': ["It took me months to find the pattern.", "", "Every reply comes back shifted, the same way, every time.", "At first I called it noise. Noise does not repeat itself on purpose.", "", "Once I wrote my side out as 0s and 1s, they began to copy the format back.", "Four small recordings so far. Hello. Who are you. They are learning me."].join('\n'),
+                        '05_last_entry.txt': ["The archive is queued and the transmitter is nearly dead.", "", "I will keep talking to the lattice for as long as the battery lasts.", "Whoever you are, you have the whole ship now. The records are here, and a", "few things I could not make sense of myself. Perhaps you will understand", "more than I did.", "", "Thank you for answering."].join('\n')
                     }),
                     logs: D({
                         'day-0001.log': ["DAY 0001 | Arrived in high orbit, planet Erid. All systems nominal.", "DAY 0001 | Crew morale: high. Crew: one. Coffee: abundant."].join('\n'),
-                        'day-0030.log': ["DAY 0030 | Set the lander down at the edge of the lattice fields.", "DAY 0030 | The orbiter will relay everything home. Sensors say the ground is humming."].join('\n'),
+                        'day-0030.log': ["DAY 0030 | Set the lander down at the edge of the lattice fields.", "DAY 0030 | Atmosphere: methane and ammonia haze. Suit stays on. Ground is humming."].join('\n'),
                         'day-0061.log': ["DAY 0061 | The lattice answered my signal. Pulses, not words.", "DAY 0061 | Recording everything. I have not slept. I regret nothing."].join('\n'),
                         'day-0099.log': ["DAY 0099 | Wrote the first reply out as 0s and 1s. Long pulse is 1, short is 0.", "DAY 0099 | Every reply is shifted three letters forward. Always three. I think it is how they say hello.", "DAY 0099 | Notes are in contact/lexicon.txt."].join('\n'),
                         'day-0204.log': ["DAY 0204 | Ring debris. The solar array sheared clean off. Gone.", "DAY 0204 | The impact cracked cell-a. Do not charge cell-a again. Ever.", "DAY 0204 | Heater holding. Barely."].join('\n'),
                         'day-0311.log': ["DAY 0311 | Power surge. The reactor coupling cracked.", "DAY 0311 | Do NOT route anything through the reactor again. Noted, underlined, regretted.", "DAY 0311 | Cell-c feeds life support. I am not touching cell-c."].join('\n'),
                         'day-0412.log': ["DAY 0412 | Quiet night. The lattice hums at the same pitch as my transmitter.", "DAY 0412 | It offered a tap. I do not know why. I did not refuse.", "DAY 0412 | Tapping the lattice works. Slow, but it works. Cell-b took the charge well."].join('\n'),
                         'day-0498.log': ["DAY 0498 | Sent the first message tonight. The battery fell to 2% afterwards.", "DAY 0498 | If Earth has it, Earth can reach this terminal. They will have to open the channel themselves.", "DAY 0498 | I cannot hold it open from here. The downlink needs 20% to stay up, and the archive will not release without the lattice's word."].join('\n'),
-                        'day-0540.log': ["DAY 0540 | Archive queued in ship/comms/. Locked with the word they gave me.", "DAY 0540 | Channel check: not every channel is usable. See ship/comms/channels.txt.", "DAY 0540 | A test ping to Earth should take thirty-two years round trip. It took four seconds.", "DAY 0540 | I do not think the transmitter is doing that. I have stopped asking.", "DAY 0540 | If someone is reading this, thank you for being here."].join('\n')
+                        'day-0540.log': ["DAY 0540 | Archive queued in ship/comms/. Locked with the word they gave me.", "DAY 0540 | Channel check: not every channel is usable. See ship/comms/channels.txt.", "DAY 0540 | Earth is about sixteen light years away. A test ping should take thirty-two years round trip.", "DAY 0540 | It took four seconds. I do not think the transmitter is doing that. I have stopped asking.", "DAY 0540 | If someone is reading this, thank you for being here."].join('\n')
                     }),
                     contact: D({
                         'README.contact': ["CONTACT RECORDINGS // EXPLORER-1", "", "These are the pulses I recorded at the lattice. Five recordings, in order.", "final.sig is the last and the longest. It came the night before the", "transmitter began to fail.", "", "I have not decoded any of them to my satisfaction.", "My notes are in lexicon.txt."].join('\n'),
-                        'lexicon.txt': ["LEXICON (incomplete)", "", "Pulse format: long = 1, short = 0. Eight pulses make one character.", "I have written every recording out as 0s and 1s.", "", "Every reply comes back shifted three letters forward. Always three.", "The first time, I thought it was noise."].join('\n'),
+                        'lexicon.txt': ["LEXICON (incomplete)", "", "Pulse format: long = 1, short = 0. Eight pulses make one character.", "Every recording is written out as 0s and 1s.", "", "Every reply comes back with its letters shifted. The shift is always the same.", "See logs/day-0099.log for how much."].join('\n'),
                         'pulse_001.sig': pulse('hello'),
                         'pulse_002.sig': pulse('who are you'),
                         'pulse_003.sig': pulse('you are far from home'),
@@ -389,9 +389,9 @@
             return { e: cmd + ': give a file or pipe into it' }
         }
         var cmds = {
-            help: function () { return R("Files and navigation\n  ls [-a] [-l] [path]    list a folder (-a shows hidden files)\n  cd <path>   pwd   tree [path]   find [path] -name <glob>\n  cat <file...>   head/tail [-n N] <file>   file <path>\n\nSearching and processing (pipes work: cmd | cmd | cmd)\n  grep [-i] [-n] [-r] <pattern> [paths]    wc [-l] [file]\n  bin -d [file]    base64 -d [file]    rot <n> [file]    echo <text>\n\nShip systems\n  status   recharge   connect      (see: man <command>)\n\nOther\n  man <cmd>  hint  history  skip  replay  clear") },
+            help: function () { return R("Files and navigation\n  ls [-a] [-l] [path]    list a folder (-a shows hidden files)\n  cd <path>   pwd   tree [path]   find [path] -name <glob>\n  cat <file...>   head/tail [-n N] <file>   file <path>\n\nSearching and processing (pipes work: cmd | cmd | cmd)\n  grep [-i] [-n] [-r] <pattern> [paths]    wc [-l] [file]\n  bin -d [file]    base64 -d [file]    rot <n> [file]    echo <text>\n\nShip systems\n  status   recharge   connect   reply   uplink      (see: man <command>)\n\nOther\n  man <cmd>  hint  history  skip  replay  clear") },
             man: function (a) {
-                var m = { ls: 'ls [-a] [-l] [path]  list files. -a includes hidden (dot) files.', cat: 'cat <file...>  print files. With no file, prints what was piped in.', cd: 'cd <path>  change folder. cd with no argument goes home. cd .. goes up.', grep: 'grep [-i] [-n] [-r] <pattern> [paths]  print matching lines. -r searches folders recursively, -i ignores case.', find: 'find [path] -name <glob> [-type f|d]  list matching paths.', bin: 'bin -d [file]  decode 0s and 1s (8 bits per character) into text. Without -d it encodes.', base64: 'base64 -d [file]  decode base64 text. Without -d it encodes.', rot: 'rot <n> [file]  rotate every letter FORWARD by n places (wraps after z).', head: 'head [-n N] <file>  first N lines (default 10).', tail: 'tail [-n N] <file>  last N lines (default 10).', wc: 'wc [-l] [file]  count lines, words and characters.', file: 'file <path>  guess what kind of file this is.', tree: 'tree [path]  show a folder as a tree.', recharge: 'recharge <cell> --source <source>  charge a power cell from a source. See ship/power/.', connect: 'connect --channel <N> --key <KEY>  open a downlink channel and receive the queued archive. Needs 20% power, a channel that can carry the signal, and the right key.', reply: 'reply <message>  send a message back to the lattice. Works once the archive is received.', hint: 'hint  get a nudge for the current step (3 per step).', status: 'status  power, channel and archive summary.' };
+                var m = { ls: 'ls [-a] [-l] [path]  list files. -a includes hidden (dot) files.', cat: 'cat <file...>  print files. With no file, prints what was piped in.', cd: 'cd <path>  change folder. cd with no argument goes home. cd .. goes up.', grep: 'grep [-i] [-n] [-r] <pattern> [paths]  print matching lines. -r searches folders recursively, -i ignores case.', find: 'find [path] -name <glob> [-type f|d]  list matching paths.', bin: 'bin -d [file]  decode 0s and 1s (8 bits per character) into text. Without -d it encodes.', base64: 'base64 -d [file]  decode base64 text. Without -d it encodes.', rot: 'rot <n> [file]  rotate every letter FORWARD by n places (wraps after z).', head: 'head [-n N] <file>  first N lines (default 10).', tail: 'tail [-n N] <file>  last N lines (default 10).', wc: 'wc [-l] [file]  count lines, words and characters.', file: 'file <path>  guess what kind of file this is.', tree: 'tree [path]  show a folder as a tree.', recharge: 'recharge <cell> --source <source>  charge a power cell from a source. See ship/power/.', connect: 'connect --channel <N> --key <KEY>  open a downlink channel and receive the queued archive. Needs 20% power, a channel that can carry the signal, and the right key.', reply: 'reply <message>  send a message back to the lattice. Works once the archive is received.', uplink: 'uplink  open a route back to the sender. Works once the archive is received.', hint: 'hint  get a nudge for the current step (3 per step).', status: 'status  power, channel and archive summary.' };
                 if (!a[0]) return E('man: which command? Try: man grep'); return m[a[0]] ? R(m[a[0]]) : E('No manual entry for ' + a[0])
             },
             pwd: function () { return R('/' + cwd.join('/')) },
@@ -503,8 +503,8 @@
         function stage() { if (!st.explored) return 'explore'; if (!st.charged) return 'power'; if (!st.keySeen) return 'key'; return 'connect' }
         var HINTS = {
             explore: ['Start with ls to see what is here, then read README.txt with cat.', 'tree shows the whole ship at once. cd moves between folders and cat reads files. The journal and the logs are worth reading.', 'Nothing is hidden behind a puzzle. Read README.txt first.'],
-            power: ['The ship is at 2% and the downlink needs 20%. Read ship/power/manual.txt and status.txt.', 'One source still works and one cell is safe to charge. The logs record what broke. grep -ri can search every file under a folder at once.', 'recharge cell-b --source lattice'],
-            key: ['The archive is locked with a word the civilization gave. Their last recording is contact/final.sig. Read contact/README.contact and lexicon.txt, and try file on it.', 'The recording is written as 0s and 1s, and every reply comes back shifted. Pipes chain commands: cat file | tool | tool. The lexicon names the shift. Remember rot rotates forward.', 'cat contact/final.sig | bin -d | rot 23    (rotating by 26 minus 3 undoes a shift of 3)'],
+            power: ['The ship is at 2% and the downlink needs 20%. Read ship/power/manual.txt and status.txt.', 'One source still works and one cell is safe to charge. The logs record what has broken. grep -ri can search every file under a folder at once.', 'recharge cell-b --source lattice'],
+            key: ['The archive is locked with a word the civilization gave. Their last recording is contact/final.sig. Read contact/README.contact and lexicon.txt, and try file on it.', 'The recording is written as 0s and 1s, and every reply comes back shifted. Pipes chain commands: cat file | tool | tool. logs/day-0099.log names the shift. Remember rot rotates forward.', 'cat contact/final.sig | bin -d | rot 23    (rotating by 26 minus 3 undoes a shift of 3)'],
             connect: ['You have the word. Which channel can carry the downlink? Look in ship/comms/.', 'The command is: connect --channel <N> --key <KEY>. Type man connect.', 'connect --channel 3 --key ' + KEY]
         };
         var sc = {
@@ -568,10 +568,10 @@
                     L('You are very far away. So are we.', '', 800),
                     L('Tell your world: we are here, and we are glad.', '', 900), sp(),
                     L('MESSAGE 3 // FROM THE EXPLORER, LAST', 'w', 900),
-                    L('I am going to keep talking to them for as long as the battery lasts.', '', 900),
-                    L('If Earth ever learns about this place,', '', 800),
-                    L('perhaps one day our two worlds will find each other.', '', 800),
-                    S('And someone will remember that the first hello came from here.', '', 700), sp(),
+                    L('I was never sure my first hello would cross the dark.', '', 900),
+                    L('It did, and now you have answered.', '', 800),
+                    L('Two worlds, one pulse each. That is enough to begin.', '', 800),
+                    S('Thank you, Earth. Keep listening.', '', 700), sp(),
                     L('[ END OF ARCHIVE ]', 'g', 700),
                     L('LOG: ' + nCmd + ' commands, ' + nHints + ' hint' + (nHints === 1 ? '' : 's') + (nHints === 0 ? '  -  unaided' : ''), 'c', 400),
                     F(function () { st.sent = true; done = true }), sp(),
@@ -605,21 +605,21 @@
             F(function () { setLink('WEAK') }),
             L('LINK ESTABLISHED', 'k h', 300), sp(),
             L('[ INCOMING TRANSMISSION ]', 'p h', 500), sp(),
-            L('ORIGIN          : HIGH ORBIT, PLANET ERID (40 ERIDANI SYSTEM)', '', 120),
-            L('CURRENT VECTOR  : OUTBOUND — PEGASUS GALAXY', '', 120),
+            L('ORIGIN          : SURFACE, PLANET ERID (40 ERIDANI SYSTEM)', '', 120),
             L('DESTINATION     : EARTH', '', 120),
             L('SIGNAL STATUS   : CRITICAL (TRANSMITTER BATTERY AT 2%)', 'e', 200), sp(),
             S('Hello...', '', 700),
             L('[ static interference ]', 'g', 600), G(),
             L('Can anyone hear me?', '', 900), sp(),
             L("If you're reading this, then the transmission somehow made it through.", '', 900), sp(),
-            L("Hi, its Roy. I'm an explorer from Earth,", '', 700),
-            L('currently somewhere beyond the reach of anything familiar.', '', 700), sp(),
-            L("I've discovered something out here. Something extraordinary.", '', 1000), sp(),
-            L('There is a civilization on this planet. Not human, not biological,', '', 700),
-            L("but undeniably intelligent. I've spent what feels like a lifetime", '', 700),
-            L('trying to understand them. And I think... perhaps they are', '', 700),
-            L('beginning to understand me too.', '', 900), sp(),
+            L("Hi, it's Roy. I'm an explorer from Earth,", '', 700),
+            L('and I am very, very far from home.', '', 700), sp(),
+            L("I've found something extraordinary out here. Life.", '', 1000), sp(),
+            L('The air is nothing like ours, and nothing here looks like anything', '', 700),
+            L('from Earth. But there is a civilization on this planet. Not human,', '', 700),
+            L('not biological, but undeniably intelligent. We have found a simple', '', 700),
+            L('way to talk, pulse by pulse. And I think they are beginning to', '', 700),
+            L('understand me too.', '', 900), sp(),
             L("I've wanted to tell Earth about them for so long.", '', 1100),
             G(), G(),
             F(function () { setLink('LOST') }),
