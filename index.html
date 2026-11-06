@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EXPLORER-1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #eef1f6;
+            --surface-1: #f8f9fc;
+            --border: rgba(20, 30, 60, .16);
+            --border-strong: rgba(20, 30, 60, .4);
+            --text-primary: #18203a;
+            --text-secondary: #4a5578;
+            --text-muted: #8a93ad;
+            --text-accent: #1d5fd6;
+            --text-danger: #c43d3d;
+            --text-success: #1f7a55;
+            --text-warning: #a8620f;
+            --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        }
+
+        @media (prefers-color-scheme:dark) {
+            :root {
+                --bg: #080c1a;
+                --surface-1: #0e1428;
+                --border: rgba(160, 180, 255, .16);
+                --border-strong: rgba(160, 180, 255, .4);
+                --text-primary: #d9e0f2;
+                --text-secondary: #8e9bc0;
+                --text-muted: #5d6a8f;
+                --text-accent: #6cb4ff;
+                --text-danger: #ff7a7a;
+                --text-success: #5fd6a4;
+                --text-warning: #f0b35a;
+            }
+
+            body {
+                background-image:
+                    radial-gradient(1px 1px at 12% 18%, rgba(217, 224, 242, .55), transparent),
+                    radial-gradient(1px 1px at 78% 9%, rgba(217, 224, 242, .4), transparent),
+                    radial-gradient(1px 1px at 41% 72%, rgba(217, 224, 242, .35), transparent),
+                    radial-gradient(1.5px 1.5px at 91% 64%, rgba(217, 224, 242, .5), transparent),
+                    radial-gradient(1px 1px at 23% 88%, rgba(217, 224, 242, .3), transparent),
+                    radial-gradient(1px 1px at 60% 35%, rgba(217, 224, 242, .3), transparent);
+            }
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            min-height: 100vh;
+            padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom))
+        }
+
+        main {
+            max-width: 880px;
+            margin: 0 auto
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap
+        }
+
+        #t {
+            background: var(--surface-1);
+            border: 0.5px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 13px;
+            line-height: 1.6
+        }
+
+        #hd {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 14px;
+            border-bottom: 0.5px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap
+        }
+
+        #bat {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        #batbar {
+            width: 34px;
+            height: 10px;
+            border: 0.5px solid var(--border-strong);
+            border-radius: 2px;
+            position: relative;
+            display: inline-block
+        }
+
+        #batfill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2%;
+            background: var(--text-danger)
+        }
+
+        #out {
+            height: clamp(300px, 62vh, 560px);
+            overflow-y: auto;
+            padding: 12px 14px;
+            white-space: pre-wrap;
+            word-break: break-word
+        }
+
+        #out a {
+            color: var(--text-accent);
+            text-decoration: underline
+        }
+
+        .c {
+            color: var(--text-secondary)
+        }
+
+        .p {
+            color: var(--text-accent)
+        }
+
+        .e {
+            color: var(--text-danger)
+        }
+
+        .k {
+            color: var(--text-success)
+        }
+
+        .w {
+            color: var(--text-warning)
+        }
+
+        .h {
+            font-weight: 500;
+            font-size: 15px
+        }
+
+        .g {
+            color: var(--text-muted)
+        }
+
+        #row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 9px 14px;
+            border-top: 0.5px solid var(--border)
+        }
+
+        #row:focus-within {
+            border-top-color: var(--text-accent)
+        }
+
+        #pr {
+            color: var(--text-accent);
+            white-space: nowrap
+        }
+
+        #in {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            background: transparent;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-primary);
+            outline: none;
+            height: 24px;
+            padding: 0;
+            box-shadow: none
+        }
+
+        #in::placeholder {
+            color: var(--text-muted)
+        }
+
+        #chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px
+        }
+
+        #chips button {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            padding: 4px 10px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 0.5px solid var(--border-strong);
+            border-radius: 6px;
+            cursor: pointer
+        }
+
+        #chips button:hover {
+            color: var(--text-primary);
+            border-color: var(--text-accent)
+        }
+
+        #chips button:focus-visible {
+            outline: 2px solid var(--text-accent);
+            outline-offset: 2px
+        }
+
+        noscript {
+            display: block;
+            padding: 16px;
+            color: var(--text-danger)
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1 class="sr-only">EXPLORER-1 remote shell. An interactive story terminal.</h1>
+        <noscript>This page is an interactive terminal and needs JavaScript to run.</noscript>
+        <div id="t">
+            <div id="hd"><span>REMOTE SHELL // EXPLORER-1</span><span id="sig"></span><span id="bat">TX <span
+                        id="batbar"><span id="batfill"></span></span><span id="batnum">02%</span></span></div>
+            <div id="out" aria-live="polite"></div>
+            <div id="row"><span id="pr">earth@explorer-1:~$</span><input id="in" type="text" autocomplete="off"
+                    autocapitalize="off" spellcheck="false" aria-label="Terminal input" placeholder="try: ls"></div>
+        </div>
+        <div id="chips"></div>
+    </main>
+    <script>
+        var out = document.getElementById('out'), inp = document.getElementById('in'), prEl = document.getElementById('pr');
+        var hist = [], hi = 0, Q = [], running = false, fast = false, done = false, nCmd = 0, nHints = 0;
+        var RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var st = { explored: false, charged: false, keySeen: false, sent: false, bat: 2 };
+        var HL = { explore: 0, power: 0, key: 0, connect: 0 };
+        var GC = '▒░#%/\\|:;*?&@';
+        function rc() { return GC[Math.floor(Math.random() * GC.length)] }
+        function corrupt(t, all) { var s = ''; for (var j = 0; j < t.length; j++) { var c = t[j]; s += (c === ' ' || c === '\n') ? c : ((all || Math.random() < 0.45) ? rc() : c) } return s }
+        function L(t, c, d) { return { t: t, c: c, d: d } }
+        function S(t, c, d) { return { s: t, c: c, d: d == null ? 300 : d } }
+        function H(h, d) { return { h: h, d: d } }
+        function F(f, d) { return { fn: f, d: d == null ? 0 : d } }
+        function sp() { return L('', '', 60) }
+        function G() { return L(corrupt('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 1), 'g', 90) }
+        function setLink(s) { var m = { SEARCHING: ['e', '░░░░'], RETRYING: ['w', '▂░░░'], UNSTABLE: ['w', '▂▄░░'], WEAK: ['w', '▂░░░'], LOCKED: ['k', '▂▄▆█'], LOST: ['e', '░░░░'] }; var e = document.getElementById('sig'); e.className = m[s][0]; e.textContent = 'LINK: ' + s + ' ' + m[s][1] }
+        function setBat(n) { st.bat = n; var f = document.getElementById('batfill'); f.style.width = Math.max(0, n) + '%'; f.style.background = n >= 20 ? 'var(--text-success)' : 'var(--text-danger)'; document.getElementById('batnum').textContent = (n < 10 ? '0' : '') + n + '%' }
+        function scr(el, txt) {
+            if (fast || RM) { el.textContent = txt; return 0 }
+            var n = txt.length, steps = Math.min(26, Math.max(10, Math.round(n / 4))), k = 0;
+            el.textContent = corrupt(txt, 1);
+            var iv = setInterval(function () { k++; var cut = Math.floor(n * k / steps); el.textContent = txt.slice(0, cut) + corrupt(txt.slice(cut), 1); out.scrollTop = out.scrollHeight; if (k >= steps) { clearInterval(iv); el.textContent = txt } }, 50);
+            return steps * 50 + 120
+        }
+        function emit(i) {
+            var el = document.createElement('div'), extra = 0;
+            if (i.c !== undefined) el.className = i.c;
+            if (i.h !== undefined) el.innerHTML = i.h;
+            else if (i.s !== undefined) extra = scr(el, i.s);
+            else el.textContent = i.t;
+            out.appendChild(el); out.scrollTop = out.scrollHeight;
+            return extra
+        }
+        function pump() {
+            running = true;
+            if (!Q.length) { running = false; fast = false; return }
+            var i = Q.shift(), quick = fast || RM, d = quick ? 0 : (i.d == null ? 70 : i.d);
+            setTimeout(function () {
+                var extra = 0;
+                if (i.fn) { var r = i.fn(); if (Array.isArray(r)) Q.unshift.apply(Q, r) } else extra = emit(i);
+                setTimeout(pump, (fast || RM) ? 0 : extra)
+            }, d)
+        }
+        function say(a) { a.forEach(function (i) { Q.push(i) }); if (!running) pump() }
+
+        /* ---------- the civilization's last recording ---------- */
+        var KEY = 'FIRST-HELLO-ERID';
+        var FINAL = ["Hello, Earth.", "We heard you before you heard us.", "For a long time we only listened.", "Your explorer spoke to the lattice each night, and we learned his words.", "He was never alone here.", "", "When someone answers him, give them this.", "The word that opens the door is:", "", "KEY: " + KEY, "", "- the Lattice"].join('\n');
+        function rotF(t, n) { n = ((n % 26) + 26) % 26; return t.replace(/[a-z]/gi, function (c) { var b = c < 'a' ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - b + n) % 26 + b) }) }
+        function toBin(t) { var g = [], l = [], i; for (i = 0; i < t.length; i++)g.push(('00000000' + t.charCodeAt(i).toString(2)).slice(-8)); for (i = 0; i < g.length; i += 7)l.push(g.slice(i, i + 7).join(' ')); return l.join('\n') }
+        function pulse(t) { return toBin(rotF(t, 3)) }
+
+        /* ---------- filesystem ---------- */
+        function D(o) { return { d: o } }
+        var FS = D({
+            home: D({
+                explorer: D({
+                    'README.txt': ["EXPLORER-1 // ONBOARD COMPUTER // REMOTE SHELL", "", "To whoever is on Earth: you are reading this, so my first message arrived.", "", "That message was only the beginning. Everything else I recorded here is", "still on this machine, and I cannot push it to you myself. The transmitter", "only has enough left for a single burst, and I already spent it.", "", "So the rest is yours to pull. I left an archive queued in ship/comms/.", "It is locked, and the link cannot hold at 2% battery. In order:", "", "  1. Give the ship enough power to hold a connection.", "  2. Find the word that unlocks the archive. The civilization gave it to me.", "  3. Open a channel that can carry the downlink.", "", "Everything you need is in this filesystem.", "Type \"help\" for commands. Read before you act."].join('\n'),
+                    '.signal': ["You found the dotfile. Most people never look.", "", "Whoever you are, on whichever side of the distance:", "they are not dangerous. They are curious. Like us.", "", "Keep looking at the edges."].join('\n'),
+                    '.shell_history': ["bin -d contact/pulse_001.sig        # nonsense. why is it all shifted?", "recharge cell-a --source solar      # nothing happened", "recharge cell-a --source reactor    # sparks, smell of burning", "cat logs/day-0204.log", "cat logs/day-0311.log", "connect --channel 1                 # static. only static."].join('\n'),
+                    journal: D({
+                        '01_departure.txt': ["I left Earth the way people leave a conversation they are sure will continue.", "", "Everyone asked what I was looking for.", "I never had a good answer. I only knew I could not stay where the map ended.", "", "Other people read the edge of a chart as a warning.", "I read it as an invitation nobody had bothered to sign."].join('\n'),
+                        '02_arrival.txt': ["Erid is not what the survey said.", "", "I set the lander down at the edge of the lattice fields. No forests.", "No oceans. Rows of tall crystalline lattices run to the horizon, and", "every one of them hums, very faintly, at the edge of hearing.", "", "The orbiter keeps relaying my signal home. The sensors call the hum geology.", "Geology does not hum in tune."].join('\n'),
+                        '03_first_contact.txt': ["Night 61. I sent a signal at the lattice, mostly out of boredom.", "It answered.", "", "Not with words. With pulses: long, short, long, long.", "I recorded all of it. I have not stopped recording since.", "", "Not human. Not biological. And undeniably intelligent."].join('\n'),
+                        '04_understanding.txt': ["I have spent what feels like a lifetime trying to understand them.", "", "Every reply comes back shifted, the same way, every time.", "At first I called it noise. Noise does not repeat itself on purpose.", "", "They learn quickly. Perhaps they are beginning to understand me too."].join('\n'),
+                        '05_last_entry.txt': ["The first message is away. I do not know if anyone will answer.", "", "The ship is failing. The transmitter is barely holding together,", "and the distance between us is almost impossible to comprehend.", "Even if someone answers, I will not live long enough to hear it.", "I have made peace with that.", "", "I left the terminal open. The records are here, and a few things I could", "not make sense of myself. Perhaps you will understand more than I did.", "", "If Earth ever learns about this place, perhaps our two worlds will find each other.", "And someone will remember that the first hello came from here."].join('\n')
+                    }),
+                    logs: D({
+                        'day-0001.log': ["DAY 0001 | Arrived in high orbit, planet Erid. All systems nominal.", "DAY 0001 | Crew morale: high. Crew: one. Coffee: abundant."].join('\n'),
+                        'day-0030.log': ["DAY 0030 | Set the lander down at the edge of the lattice fields.", "DAY 0030 | The orbiter will relay everything home. Sensors say the ground is humming."].join('\n'),
+                        'day-0061.log': ["DAY 0061 | The lattice answered my signal. Pulses, not words.", "DAY 0061 | Recording everything. I have not slept. I regret nothing."].join('\n'),
+                        'day-0099.log': ["DAY 0099 | Wrote the first reply out as 0s and 1s. Long pulse is 1, short is 0.", "DAY 0099 | Every reply is shifted three letters forward. Always three. I think it is how they say hello.", "DAY 0099 | Notes are in contact/lexicon.txt."].join('\n'),
+                        'day-0204.log': ["DAY 0204 | Ring debris. The solar array sheared clean off. Gone.", "DAY 0204 | The impact cracked cell-a. Do not charge cell-a again. Ever.", "DAY 0204 | Heater holding. Barely."].join('\n'),
+                        'day-0311.log': ["DAY 0311 | Power surge. The reactor coupling cracked.", "DAY 0311 | Do NOT route anything through the reactor again. Noted, underlined, regretted.", "DAY 0311 | Cell-c feeds life support. I am not touching cell-c."].join('\n'),
+                        'day-0412.log': ["DAY 0412 | Quiet night. The lattice hums at the same pitch as my transmitter.", "DAY 0412 | It offered a tap. I do not know why. I did not refuse.", "DAY 0412 | Tapping the lattice works. Slow, but it works. Cell-b took the charge well."].join('\n'),
+                        'day-0498.log': ["DAY 0498 | Sent the first message tonight. The battery fell to 2% afterwards.", "DAY 0498 | If Earth has it, Earth can reach this terminal. They will have to open the channel themselves.", "DAY 0498 | I cannot hold it open from here. The downlink needs 20% to stay up, and the archive will not release without the lattice's word."].join('\n'),
+                        'day-0540.log': ["DAY 0540 | Archive queued in ship/comms/. Locked with the word they gave me.", "DAY 0540 | Channel check: not every channel is usable. See ship/comms/channels.txt.", "DAY 0540 | A test ping to Earth should take thirty-two years round trip. It took four seconds.", "DAY 0540 | I do not think the transmitter is doing that. I have stopped asking.", "DAY 0540 | If someone is reading this, thank you for being here."].join('\n')
+                    }),
+                    contact: D({
+                        'README.contact': ["CONTACT RECORDINGS // EXPLORER-1", "", "These are the pulses I recorded at the lattice. Five recordings, in order.", "final.sig is the last and the longest. It came the night before the", "transmitter began to fail.", "", "I have not decoded any of them to my satisfaction.", "My notes are in lexicon.txt."].join('\n'),
+                        'lexicon.txt': ["LEXICON (incomplete)", "", "Pulse format: long = 1, short = 0. Eight pulses make one character.", "I have written every recording out as 0s and 1s.", "", "Every reply comes back shifted three letters forward. Always three.", "The first time, I thought it was noise."].join('\n'),
+                        'pulse_001.sig': pulse('hello'),
+                        'pulse_002.sig': pulse('who are you'),
+                        'pulse_003.sig': pulse('you are far from home'),
+                        'pulse_004.sig': pulse('we are listening'),
+                        'final.sig': pulse(FINAL)
+                    }),
+                    ship: D({
+                        power: D({
+                            'status.txt': ["POWER STATUS (day 0540)", "  cell-a   CRACKED    damaged casing", "  cell-b   EMPTY      intact", "  cell-c   RESERVED   wired to life support", "", "  transmitter: 02%    (the downlink needs 20% to hold)"].join('\n'),
+                            'sources.txt': ["POWER SOURCES", "  reactor   fusion reactor coupling", "  solar     solar array", "  lattice   resonant tap on the planet's lattice"].join('\n'),
+                            'manual.txt': ["POWER MANUAL", "", "  recharge <cell> --source <source>", "", "A cell can be charged from one source at a time. A damaged cell or a", "failed source will refuse to charge. Cells are listed in status.txt,", "sources in sources.txt. The ship log records what has broken and what", "still works. The downlink needs at least 20% power to hold."].join('\n')
+                        }),
+                        comms: D({
+                            'channels.txt': ["CH   FREQ       STATUS", "1    8.42 GHz   JAMMED   (ring debris noise)", "2    8.44 GHz   DEAD     (transmitter coil failed)", "3    8.46 GHz   CLEAR    (weak, but stable)", "4    7.15 GHz   UNKNOWN"].join('\n'),
+                            'transmitter.cfg': ["mode       = downlink", "power_min  = 20%", "archive    = outbox/archive.pkg", "lock       = authorisation word required", "usage      = connect --channel <N> --key <KEY>"].join('\n'),
+                            outbox: D({
+                                'archive.pkg': ["ARCHIVE.PKG", "3 messages queued.", "LOCKED.", "", "Open a channel with the right word to receive them."].join('\n')
+                            })
+                        })
+                    })
+                })
+            })
+        });
+        var cwd = ['home', 'explorer'];
+        function getNode(segs) { var n = FS; for (var i = 0; i < segs.length; i++) { if (!n || !n.d || !(segs[i] in n.d)) return null; n = n.d[segs[i]] } return n }
+        function norm(p) {
+            var segs; if (p === '~' || p.indexOf('~/') === 0) { segs = ['home', 'explorer']; p = p.slice(2) } else if (p[0] === '/') { segs = [] } else segs = cwd.slice();
+            p.split('/').forEach(function (s) { if (!s || s === '.') return; if (s === '..') segs.pop(); else segs.push(s) }); return segs
+        }
+        function esc(s) { return s.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') }
+        function expand(arg) {
+            if (arg.indexOf('*') < 0) return [arg];
+            var i = arg.lastIndexOf('/'), dir = i < 0 ? '.' : (arg.slice(0, i) || '/'), base = arg.slice(i + 1);
+            var n = getNode(norm(dir)); if (!n || !n.d) return [arg];
+            var re = new RegExp('^' + esc(base) + '$');
+            var m = Object.keys(n.d).filter(function (k) { return re.test(k) && (k[0] !== '.' || base[0] === '.') }).sort();
+            return m.length ? m.map(function (k) { return (i < 0 ? '' : arg.slice(0, i + 1)) + k }) : [arg]
+        }
+        function R(o) { return { o: o } }
+        function E(m) { return { e: m } }
+        function expandAll(a) { var r = []; a.forEach(function (x) { r = r.concat(expand(x)) }); return r }
+        function sz(c) { return c.d ? 4096 : c.length }
+        function pad6(n) { return ('      ' + n).slice(-6) }
+        function prompt() { var rest = cwd.slice(2), p; if (cwd[0] === 'home' && cwd[1] === 'explorer') p = '~' + (rest.length ? '/' + rest.join('/') : ''); else p = '/' + cwd.join('/'); return 'earth@explorer-1:' + p + '$' }
+
+        /* ---------- shell parsing ---------- */
+        function tokenize(s) { var t = [], cur = '', q = null, has = false; for (var i = 0; i < s.length; i++) { var c = s[i]; if (q) { if (c === q) q = null; else cur += c } else if (c === '"' || c === "'") { q = c; has = true } else if (/\s/.test(c)) { if (cur || has) { t.push(cur); cur = ''; has = false } } else cur += c } if (cur || has) t.push(cur); return t }
+        function splitPipes(s) { var parts = [], cur = '', q = null; for (var i = 0; i < s.length; i++) { var c = s[i]; if (q) { cur += c; if (c === q) q = null } else if (c === '"' || c === "'") { q = c; cur += c } else if (c === '|') { parts.push(cur); cur = '' } else cur += c } parts.push(cur); return parts }
+        function flags(a) { var o = {}, pos = []; for (var i = 0; i < a.length; i++) { var x = a[i]; if (x.slice(0, 2) === '--' && x.indexOf('=') > 0) { o[x.slice(2, x.indexOf('='))] = x.slice(x.indexOf('=') + 1) } else if (x.slice(0, 2) === '--' || (x[0] === '-' && x.length === 2 && isNaN(x))) { o[x.replace(/^-+/, '')] = a[i + 1]; i++ } else pos.push(x) } return { o: o, pos: pos } }
+
+        /* ---------- plain commands ---------- */
+        function linesCmd(name, a, si, tail) {
+            var n = 10, files = [];
+            for (var i = 0; i < a.length; i++) { if (a[i] === '-n') { n = parseInt(a[++i], 10) || 10 } else if (/^-\d+$/.test(a[i])) n = -parseInt(a[i], 10); else files.push(a[i]) }
+            var txt;
+            if (files.length) { var nd = getNode(norm(files[0])); if (!nd) return E(name + ": cannot open '" + files[0] + "': No such file or directory"); if (nd.d) return E(name + ': ' + files[0] + ': Is a directory'); txt = nd }
+            else if (si != null) txt = si; else return E(name + ': give a file or pipe into it');
+            var l = txt.split('\n'); return R((tail ? l.slice(-n) : l.slice(0, n)).join('\n'))
+        }
+        function source(cmd, a, si) {
+            var file = null; a.forEach(function (x) { if (x[0] !== '-') file = x });
+            if (file) { var n = getNode(norm(file)); if (!n) return { e: cmd + ': ' + file + ': No such file or directory' }; if (n.d) return { e: cmd + ': ' + file + ': Is a directory' }; return { t: n } }
+            if (si != null) return { t: si };
+            return { e: cmd + ': give a file or pipe into it' }
+        }
+        var cmds = {
+            help: function () { return R("Files and navigation\n  ls [-a] [-l] [path]    list a folder (-a shows hidden files)\n  cd <path>   pwd   tree [path]   find [path] -name <glob>\n  cat <file...>   head/tail [-n N] <file>   file <path>\n\nSearching and processing (pipes work: cmd | cmd | cmd)\n  grep [-i] [-n] [-r] <pattern> [paths]    wc [-l] [file]\n  bin -d [file]    base64 -d [file]    rot <n> [file]    echo <text>\n\nShip systems\n  status   recharge   connect      (see: man <command>)\n\nOther\n  man <cmd>  hint  history  skip  replay  clear") },
+            man: function (a) {
+                var m = { ls: 'ls [-a] [-l] [path]  list files. -a includes hidden (dot) files.', cat: 'cat <file...>  print files. With no file, prints what was piped in.', cd: 'cd <path>  change folder. cd with no argument goes home. cd .. goes up.', grep: 'grep [-i] [-n] [-r] <pattern> [paths]  print matching lines. -r searches folders recursively, -i ignores case.', find: 'find [path] -name <glob> [-type f|d]  list matching paths.', bin: 'bin -d [file]  decode 0s and 1s (8 bits per character) into text. Without -d it encodes.', base64: 'base64 -d [file]  decode base64 text. Without -d it encodes.', rot: 'rot <n> [file]  rotate every letter FORWARD by n places (wraps after z).', head: 'head [-n N] <file>  first N lines (default 10).', tail: 'tail [-n N] <file>  last N lines (default 10).', wc: 'wc [-l] [file]  count lines, words and characters.', file: 'file <path>  guess what kind of file this is.', tree: 'tree [path]  show a folder as a tree.', recharge: 'recharge <cell> --source <source>  charge a power cell from a source. See ship/power/.', connect: 'connect --channel <N> --key <KEY>  open a downlink channel and receive the queued archive. Needs 20% power, a channel that can carry the signal, and the right key.', reply: 'reply <message>  send a message back to the lattice. Works once the archive is received.', hint: 'hint  get a nudge for the current step (3 per step).', status: 'status  power, channel and archive summary.' };
+                if (!a[0]) return E('man: which command? Try: man grep'); return m[a[0]] ? R(m[a[0]]) : E('No manual entry for ' + a[0])
+            },
+            pwd: function () { return R('/' + cwd.join('/')) },
+            whoami: function () { return R('earth  (remote)') },
+            date: function () { return R('Fri Nov 06 2026  (ship clock: day 0540)') },
+            history: function () { return R(hist.map(function (h, i) { return pad6(i + 1) + '  ' + h }).join('\n')) },
+            echo: function (a) { return R(a.join(' ')) },
+            cd: function (a) { var p = a[0] || '~'; var n = getNode(norm(p)); if (!n) return E('cd: ' + p + ': No such file or directory'); if (!n.d) return E('cd: ' + p + ': Not a directory'); cwd = norm(p); return R('') },
+            ls: function (a) {
+                var all = false, lg = false, paths = [];
+                a.forEach(function (x) { if (x[0] === '-' && x.length > 1) { if (x.indexOf('a') > 0) all = true; if (x.indexOf('l') > 0) lg = true } else paths = paths.concat(expand(x)) });
+                if (!paths.length) paths = ['.'];
+                var o = [];
+                for (var k = 0; k < paths.length; k++) {
+                    var p = paths[k], n = getNode(norm(p));
+                    if (!n) { if (paths.length === 1) return E("ls: cannot access '" + p + "': No such file or directory"); o.push("ls: cannot access '" + p + "': No such file or directory"); continue }
+                    if (typeof n === 'string') { o.push(p); continue }
+                    var names = Object.keys(n.d).filter(function (x) { return all || x[0] !== '.' }).sort();
+                    var items = names.map(function (x) { var c = n.d[x]; return lg ? ((c.d ? 'drwxr-xr-x' : '-rw-r--r--') + '  ' + pad6(sz(c)) + '  ' + x + (c.d ? '/' : '')) : (x + (c.d ? '/' : '')) });
+                    o.push((paths.length > 1 ? p + ':\n' : '') + (lg ? items.join('\n') : items.join('  ')))
+                }
+                return R(o.join('\n\n'))
+            },
+            tree: function (a) {
+                var p = a[0] || '.', n = getNode(norm(p));
+                if (!n) return E("tree: '" + p + "': No such file or directory");
+                if (!n.d) return R(p);
+                var o = [p];
+                function walk(node, pre) { var ks = Object.keys(node.d).filter(function (k) { return k[0] !== '.' }).sort(); ks.forEach(function (k, i) { var last = i === ks.length - 1, c = node.d[k]; o.push(pre + (last ? '└── ' : '├── ') + k + (c.d ? '/' : '')); if (c.d) walk(c, pre + (last ? '    ' : '│   ')) }) }
+                walk(n, ''); return R(o.join('\n'))
+            },
+            cat: function (a, si) {
+                var files = expandAll(a);
+                if (!files.length) return si != null ? R(si) : E('cat: give a file or pipe into it');
+                var o = [];
+                files.forEach(function (f) { var n = getNode(norm(f)); if (!n) o.push('cat: ' + f + ': No such file or directory'); else if (n.d) o.push('cat: ' + f + ': Is a directory'); else { o.push(n); if (norm(f).join('/') === 'home/explorer/README.txt') st.explored = true } });
+                return R(o.join('\n'))
+            },
+            head: function (a, si) { return linesCmd('head', a, si, false) },
+            tail: function (a, si) { return linesCmd('tail', a, si, true) },
+            file: function (a) {
+                if (!a[0]) return E('file: which file?');
+                var n = getNode(norm(a[0])); if (!n) return E('file: cannot open ' + a[0]);
+                if (n.d) return R(a[0] + ': directory');
+                if (/^[01\s]+$/.test(n) && n.replace(/\s/g, '').length >= 16) return R(a[0] + ': ASCII text, only 0s and 1s (looks like binary-encoded data)');
+                if (/^[A-Za-z0-9+\/=\s]+$/.test(n) && n.replace(/\s/g, '').length > 40 && /[0-9+\/=]/.test(n)) return R(a[0] + ': ASCII text, looks like base64-encoded data');
+                return R(a[0] + ': ASCII text')
+            },
+            wc: function (a, si) {
+                var mode = null, file = null; a.forEach(function (x) { if (x[0] === '-') mode = x.slice(1); else file = x });
+                var txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('wc: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('wc: give a file or pipe into it');
+                var l = txt === '' ? 0 : txt.split('\n').length, w = txt.split(/\s+/).filter(Boolean).length, c = txt.length;
+                if (mode === 'l') return R(String(l)); if (mode === 'w') return R(String(w)); if (mode === 'c') return R(String(c));
+                return R(l + ' ' + w + ' ' + c + (file ? ' ' + file : ''))
+            },
+            grep: function (a, si) {
+                var ic = false, rec = false, num = false, rest = [];
+                a.forEach(function (x) { if (/^-[a-zA-Z]+$/.test(x)) { if (x.indexOf('i') > 0) ic = true; if (x.indexOf('r') > 0 || x.indexOf('R') > 0) rec = true; if (x.indexOf('n') > 0) num = true } else rest.push(x) });
+                if (!rest.length) return E('usage: grep [-i] [-n] [-r] pattern [paths]');
+                var re; try { re = new RegExp(rest[0], ic ? 'i' : '') } catch (e) { return E('grep: invalid pattern') }
+                var paths = expandAll(rest.slice(1));
+                var res = [], label = rec || paths.length > 1;
+                function scan(txt, lab) { txt.split('\n').forEach(function (ln, i) { if (re.test(ln)) res.push((lab ? lab + ':' : '') + (num ? (i + 1) + ':' : '') + ln) }) }
+                function walk(node, path) { if (typeof node === 'string') { scan(node, label ? path : null); return } Object.keys(node.d).sort().forEach(function (k) { walk(node.d[k], path.replace(/\/$/, '') + '/' + k) }) }
+                if (!paths.length) { if (si != null) { scan(si, null); return R(res.join('\n')) } if (rec) paths = ['.']; else return E('grep: give a file or pipe into it') }
+                for (var i = 0; i < paths.length; i++) {
+                    var n = getNode(norm(paths[i]));
+                    if (!n) { res.push('grep: ' + paths[i] + ': No such file or directory'); continue }
+                    if (n.d && !rec) { res.push('grep: ' + paths[i] + ': Is a directory (use -r)'); continue }
+                    walk(n, paths[i])
+                }
+                return R(res.join('\n'))
+            },
+            find: function (a) {
+                var start = '.', name = null, type = null;
+                for (var i = 0; i < a.length; i++) { if (a[i] === '-name') name = a[++i]; else if (a[i] === '-type') type = a[++i]; else if (a[i][0] !== '-') start = a[i] }
+                var n = getNode(norm(start)); if (!n) return E("find: '" + start + "': No such file or directory");
+                var re = name ? new RegExp('^' + esc(name) + '$') : null, res = [];
+                function walk(node, path, nm) { var isd = !!node.d; if ((!re || re.test(nm)) && (!type || (type === 'd' && isd) || (type === 'f' && !isd))) res.push(path); if (isd) Object.keys(node.d).sort().forEach(function (k) { walk(node.d[k], path.replace(/\/$/, '') + '/' + k, k) }) }
+                walk(n, start, start.split('/').pop() || start); return R(res.join('\n'))
+            },
+            bin: function (a, si) {
+                var dec = a.indexOf('-d') > -1 || a.indexOf('--decode') > -1;
+                var s = source('bin', a, si); if (s.e) return E(s.e);
+                if (!dec) return R(toBin(s.t));
+                var b = s.t.replace(/\s+/g, '');
+                if (!/^[01]+$/.test(b) || b.length % 8) return E('bin: input must be 0s and 1s in groups of 8');
+                var o = ''; for (var i = 0; i < b.length; i += 8)o += String.fromCharCode(parseInt(b.slice(i, i + 8), 2));
+                return R(o)
+            },
+            base64: function (a, si) {
+                var dec = a.indexOf('-d') > -1 || a.indexOf('--decode') > -1 || a.indexOf('-D') > -1;
+                var s = source('base64', a, si); if (s.e) return E(s.e);
+                try { return R(dec ? atob(s.t.replace(/\s+/g, '')) : btoa(s.t)) } catch (e) { return E('base64: invalid input') }
+            },
+            rot: function (a, si) {
+                if (!a.length || isNaN(parseInt(a[0], 10))) return E('usage: rot <n> [file]   (rotate letters forward by n)');
+                var n = parseInt(a[0], 10), file = a[1], txt;
+                if (file) { var nd = getNode(norm(file)); if (!nd) return E('rot: ' + file + ': No such file or directory'); if (nd.d) return E('rot: ' + file + ': Is a directory'); txt = nd } else if (si != null) txt = si; else return E('rot: give a file or pipe into it');
+                return R(rotF(txt, n))
+            },
+            rm: function () { return E('rm: this ship has been through enough.') },
+            sudo: function () { return E('Permission denied. The transmitter has no spare power for root.') },
+            exit: function () { return E('There is no exit. The channel stays open for as long as the battery does.') },
+            matrix: function () { return R(corrupt('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 1) + '\n' + corrupt('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 1) + '\nThe lattice hums. It has noticed you.') }
+        };
+
+        /* ---------- ship commands ---------- */
+        function stage() { if (!st.explored) return 'explore'; if (!st.charged) return 'power'; if (!st.keySeen) return 'key'; return 'connect' }
+        var HINTS = {
+            explore: ['Start with ls to see what is here, then read README.txt with cat.', 'tree shows the whole ship at once. cd moves between folders and cat reads files. The journal and the logs are worth reading.', 'Nothing is hidden behind a puzzle. Read README.txt first.'],
+            power: ['The ship is at 2% and the downlink needs 20%. Read ship/power/manual.txt and status.txt.', 'One source still works and one cell is safe to charge. The logs record what broke. grep -ri can search every file under a folder at once.', 'recharge cell-b --source lattice'],
+            key: ['The archive is locked with a word the civilization gave. Their last recording is contact/final.sig. Read contact/README.contact and lexicon.txt, and try file on it.', 'The recording is written as 0s and 1s, and every reply comes back shifted. Pipes chain commands: cat file | tool | tool. The lexicon names the shift. Remember rot rotates forward.', 'cat contact/final.sig | bin -d | rot 23    (rotating by 26 minus 3 undoes a shift of 3)'],
+            connect: ['You have the word. Which channel can carry the downlink? Look in ship/comms/.', 'The command is: connect --channel <N> --key <KEY>. Type man connect.', 'connect --channel 3 --key ' + KEY]
+        };
+        var sc = {
+            hint: function () {
+                if (st.sent) return [L('Nothing left to do. Keep exploring: try ls -a, reply, or uplink.', 'c', 0)];
+                var s = stage(), n = HL[s];
+                if (n >= 3) return [L('No more hints for this step.', 'c', 0)];
+                HL[s]++; nHints++;
+                return [L('HINT ' + HL[s] + '/3' + (HL[s] === 3 ? ' (last resort)' : '') + ':\n' + HINTS[s][n], 'w', 0)]
+            },
+            status: function () {
+                return [L('POWER      ' + document.getElementById('batnum').textContent + '   (the downlink needs 20%)\nCHANNEL    ' + (st.sent ? 'CONNECTED (CH-3)' : 'NOT CONNECTED') + '\nARCHIVE    ' + (st.sent ? 'RECEIVED' : 'LOCKED'), 'p', 0)]
+            },
+            recharge: function (a) {
+                var f = flags(a), cell = (f.pos[0] || '').toLowerCase(), src = (f.o.source || f.o.s || '').toLowerCase();
+                if (!cell || !src) return [L('usage: recharge <cell> --source <source>\nCells and sources are listed in ship/power/.', 'e', 0)];
+                if (['cell-a', 'cell-b', 'cell-c'].indexOf(cell) < 0) return [L('recharge: unknown cell "' + cell + '".', 'e', 0)];
+                if (['reactor', 'solar', 'lattice'].indexOf(src) < 0) return [L('recharge: unknown source "' + src + '".', 'e', 0)];
+                if (cell === 'cell-a') return [L('> checking cell-a ... casing cracked.\nCharging would rupture it. Aborted.', 'e', 0)];
+                if (cell === 'cell-c') return [L('> checking cell-c ... wired to life support.\nDisconnecting it would be fatal. Aborted.', 'e', 0)];
+                if (st.charged) return [L('cell-b is already charged to ' + st.bat + '%.', 'c', 0)];
+                if (src === 'reactor') return [L('> coupling to reactor ...', 'c', 400), G(), L('SPARKS. Reactor coupling cracked: surge detected. Aborted.', 'e', 300)];
+                if (src === 'solar') return [L('> searching for solar array ...', 'c', 500), L('no response. The array is not there.', 'e', 300)];
+                var a2 = [L('> opening resonant tap ... OK', 'k', 500), L('> the lattice hums back ... slow, but it holds', '', 700), F(function () { setLink('UNSTABLE') })];
+                for (var i = 1; i <= 5; i++) { (function (i) { var bar = '#'.repeat(i * 2) + '.'.repeat(10 - i * 2); a2.push(L('> cell-b  [' + bar + ']  ' + (2 + i * 9) + '%', '', 550)); a2.push(F(function () { setBat(2 + i * 9) })) })(i) }
+                a2.push(F(function () { st.charged = true; setLink('LOCKED') }));
+                a2.push(L('cell-b charged. The downlink can hold now.', 'k h', 300));
+                return a2
+            },
+            connect: function (a) {
+                var f = flags(a), key = (f.o.key || f.o.k || '').trim(), chRaw = String(f.o.channel || f.o.c || '').replace(/\D/g, ''), ch = parseInt(chRaw, 10);
+                if (st.sent) return [L('The archive is already received. The channel is still open: try reply, or uplink.', 'c', 0)];
+                if (!key || isNaN(ch)) return [L('usage: connect --channel <N> --key <KEY>\nChannels are listed in ship/comms/.', 'e', 0)];
+                if (st.bat < 20) return [L('DOWNLINK: ship power too low (' + (st.bat < 10 ? '0' : '') + st.bat + '%). The link cannot hold under 20%. Recharge first.', 'e', 0)];
+                if (ch < 1 || ch > 4) return [L('connect: no such channel "' + ch + '". See ship/comms/channels.txt.', 'e', 0)];
+                if (ch === 1) return [L('> opening channel 1 (8.42 GHz) ...', 'c', 500), G(), G(), L('CH-1: only noise. Ring debris is jamming the band.', 'e', 300)];
+                if (ch === 2) return [L('> opening channel 2 (8.44 GHz) ...', 'c', 500), L('CH-2: no carrier. The transmitter coil for this band has failed.', 'e', 300)];
+                if (ch === 4) return [L('> opening channel 4 (7.15 GHz) ...', 'c', 500), G(), L('CH-4: no response. Nothing is listening on this band.', 'e', 300)];
+                if (key.toUpperCase() !== KEY) return [L('> opening channel 3 (8.46 GHz) ... OK', 'k', 500), L('> authorisation word rejected. The archive stays locked.', 'e', 300)];
+                return [
+                    L('> opening channel 3 (8.46 GHz) ... OK', 'k', 500),
+                    L('> handshake with EXPLORER-1 ... answered', 'k', 600),
+                    L('> authorisation word accepted', 'k', 600),
+                    L('> unlocking archive.pkg', '', 600),
+                    L('> receiving  [####......]  40%', '', 600), G(), G(),
+                    F(function () { setLink('LOST') }),
+                    L('[ LINK LOST ]', 'e h', 500),
+                    L('> retry 1/3 ... FAILED', 'w', 900), G(),
+                    L('> retry 2/3 ... FAILED', 'w', 900), G(),
+                    L('> retry 3/3 ... handshake ACK', 'k', 1000),
+                    F(function () { setLink('LOCKED') }),
+                    L('> receiving  [##########]  100%', 'k', 700), sp(),
+                    L('[ ARCHIVE RECEIVED // 3 MESSAGES ]', 'p h', 700), sp(),
+                    L('MESSAGE 1 // FROM THE EXPLORER', 'w', 800),
+                    L('If you are reading this, you did what I could not:', '', 800),
+                    L('you listened to the end.', '', 800),
+                    L('I do not know what you will do with what I found.', '', 800),
+                    L('Be kind to them. They are learning us as fast as we are learning them.', '', 900), sp(),
+                    L('MESSAGE 2 // FROM THE LATTICE (translated, badly)', 'w', 900),
+                    S('We have been waiting for a second voice.', '', 600),
+                    L('You are very far away. So are we.', '', 800),
+                    L('Tell your world: we are here, and we are glad.', '', 900), sp(),
+                    L('MESSAGE 3 // FROM THE EXPLORER, LAST', 'w', 900),
+                    L('I am going to keep talking to them for as long as the battery lasts.', '', 900),
+                    L('If Earth ever learns about this place,', '', 800),
+                    L('perhaps one day our two worlds will find each other.', '', 800),
+                    S('And someone will remember that the first hello came from here.', '', 700), sp(),
+                    L('[ END OF ARCHIVE ]', 'g', 700),
+                    L('LOG: ' + nCmd + ' commands, ' + nHints + ' hint' + (nHints === 1 ? '' : 's') + (nHints === 0 ? '  -  unaided' : ''), 'c', 400),
+                    F(function () { st.sent = true; done = true }), sp(),
+                    L('The channel is still open. Whatever you send back, the lattice will carry.', 'c', 600),
+                    L('Type: reply <your message>     or: uplink', 'c', 400)]
+            },
+            reply: function (a) {
+                if (!done) return [L('No open channel yet. Receive the archive first.', 'e', 0)];
+                var msg = a.join(' ').trim();
+                if (!msg) return [L('usage: reply <message>', 'e', 0)];
+                if (msg.length > 160) msg = msg.slice(0, 160);
+                return [L('> sending: "' + msg + '"', '', 500), L('> carrier steady ...', 'c', 700), G(), L('> delivered. The lattice is humming.', 'k', 900), S('Received.', '', 400)]
+            },
+            uplink: function () {
+                if (!done) return [L('No route yet. Receive the archive first.', 'e', 0)];
+                return [L('Opening uplink ...', 'c', 400), G(), H('<a href="https://github.com/Jit-Roy" target="_blank" rel="noopener noreferrer">[ OPEN CHANNEL → ]</a>', 300)]
+            },
+            replay: function () { st = { explored: false, charged: false, keySeen: false, sent: false, bat: 2 }; HL = { explore: 0, power: 0, key: 0, connect: 0 }; done = false; nCmd = 0; nHints = 0; cwd = ['home', 'explorer']; Q.length = 0; out.innerHTML = ''; prEl.textContent = prompt(); return boot() }
+        };
+
+        /* ---------- the transmission ---------- */
+        function boot() {
+            return [F(function () { setLink('SEARCHING'); setBat(2) }),
+            L('> scanning for carrier...', 'c', 500), L('NO CARRIER', 'e', 800),
+            L('> retry 1/4 ... FAILED  noise floor too high', 'w', 800), G(),
+            L('> retry 2/4 ... FAILED  no handshake', 'w', 800), G(), G(),
+            F(function () { setLink('RETRYING') }),
+            L('> retry 3/4 ... PARTIAL  14% of packets recovered', 'w', 800),
+            F(function () { setLink('UNSTABLE') }),
+            L('> retry 4/4 ... handshake ACK', 'k', 800),
+            F(function () { setLink('WEAK') }),
+            L('LINK ESTABLISHED', 'k h', 300), sp(),
+            L('[ INCOMING TRANSMISSION ]', 'p h', 500), sp(),
+            L('ORIGIN          : HIGH ORBIT, PLANET ERID (40 ERIDANI SYSTEM)', '', 120),
+            L('CURRENT VECTOR  : OUTBOUND — PEGASUS GALAXY', '', 120),
+            L('DESTINATION     : EARTH', '', 120),
+            L('SIGNAL STATUS   : CRITICAL (TRANSMITTER BATTERY AT 2%)', 'e', 200), sp(),
+            S('Hello...', '', 700),
+            L('[ static interference ]', 'g', 600), G(),
+            L('Can anyone hear me?', '', 900), sp(),
+            L("If you're reading this, then the transmission somehow made it through.", '', 900), sp(),
+            L("Hi, its Roy. I'm an explorer from Earth,", '', 700),
+            L('currently somewhere beyond the reach of anything familiar.', '', 700), sp(),
+            L("I've discovered something out here. Something extraordinary.", '', 1000), sp(),
+            L('There is a civilization on this planet. Not human, not biological,', '', 700),
+            L("but undeniably intelligent. I've spent what feels like a lifetime", '', 700),
+            L('trying to understand them. And I think... perhaps they are', '', 700),
+            L('beginning to understand me too.', '', 900), sp(),
+            L("I've wanted to tell Earth about them for so long.", '', 1100),
+            G(), G(),
+            F(function () { setLink('LOST') }),
+            L('[ LINK LOST ]', 'e h', 400),
+            L('> retry 1/3 ... FAILED', 'w', 900), G(),
+            L('> retry 2/3 ... FAILED', 'w', 900), G(),
+            L('> retry 3/3 ... handshake ACK', 'k', 1000),
+            F(function () { setLink('WEAK') }),
+            L('[ packet 52 retransmitted ]', 'k', 500), sp(),
+            L('But my ship is failing. The transmitter is barely holding together,', '', 800),
+            L('and the distance between us is almost impossible to comprehend.', '', 800), sp(),
+            L("Even if this message reaches home, I won't live long enough to hear a reply.", '', 900),
+            L("I suppose that's something I've made peace with.", '', 900), sp(),
+            L("I've left the ship's terminal accessible through this connection.", '', 800),
+            L("There are records, logs, and a few things I haven't been able to make sense of myself.", '', 800),
+            L("Perhaps you'll understand more than I did.", '', 900), sp(),
+            L("I don't know how long this connection will last.", '', 900),
+            L('But if Earth ever learns about this place, perhaps one day our two worlds will find each other.', '', 900),
+            S("And perhaps, somewhere in the distant future, someone will remember that the first hello came from here.", '', 600), sp(),
+            L('[ END OF TRANSMISSION ]', 'p h', 700), sp(),
+            L('> connection handed to Earth ... REMOTE SHELL GRANTED // EXPLORER-1', 'k h', 700),
+            L('Type "ls" to look around, or "help" for commands.', 'k', 500), sp()]
+        }
+
+        /* ---------- executor ---------- */
+        function exec(line) {
+            var stages = splitPipes(line), si = null;
+            for (var i = 0; i < stages.length; i++) {
+                var tk = tokenize(stages[i]);
+                if (!tk.length) return [L('syntax error near "|"', 'e', 0)];
+                var cn = tk[0].toLowerCase();
+                if (sc[cn]) { if (stages.length > 1) return [L(cn + ': cannot be used in a pipeline', 'e', 0)]; var r0 = sc[cn](tk.slice(1)); prEl.textContent = prompt(); return r0 }
+                var fn = cmds[cn];
+                if (!fn) return [L(cn + ': command not found. Type "help".', 'e', 0)];
+                var res = fn(tk.slice(1), si);
+                if (res.e) { prEl.textContent = prompt(); return [L(res.e, 'e', 0)] }
+                si = res.o
+            }
+            prEl.textContent = prompt();
+            if (si === '' || si == null) return [];
+            if (si.indexOf(KEY) > -1) st.keySeen = true;
+            var items = [];
+            if (Math.random() < (st.bat < 10 ? 0.12 : 0.03)) { items.push(L('[ link jitter — retransmitting ]', 'w', 300)) }
+            items.push(L(si, '', 0));
+            return items
+        }
+        function run(line) {
+            var t = line.trim(); if (!t) return;
+            var first = tokenize(t)[0], c = first ? first.toLowerCase() : '';
+            if (c === 'clear') { Q.length = 0; out.innerHTML = ''; return }
+            if (c === 'skip') { emit(L(prompt() + ' ' + line, 'c')); if (running) { fast = true; emit(L('fast-forwarding buffer...', 'c')) } else emit(L('Nothing to skip.', 'c')); return }
+            nCmd++;
+            Q.push(L(prompt() + ' ' + line, 'c', 0));
+            Q.push(F(function () { return exec(t) }));
+            if (!running) pump()
+        }
+
+        /* ---------- input ---------- */
+        function complete() {
+            var v = inp.value, m = v.match(/(\S*)$/), tok = m[1], before = v.slice(0, v.length - tok.length), cands;
+            if (!before.trim() || /\|\s*$/.test(before)) { cands = Object.keys(cmds).concat(Object.keys(sc)) }
+            else {
+                var i = tok.lastIndexOf('/'), dirp = i < 0 ? '.' : (tok.slice(0, i) || '/'), base = tok.slice(i + 1), n = getNode(norm(dirp));
+                cands = (n && n.d) ? Object.keys(n.d).filter(function (k) { return k[0] !== '.' || base[0] === '.' }).map(function (k) { return (i < 0 ? '' : tok.slice(0, i + 1)) + k + (n.d[k].d ? '/' : '') }) : []
+            }
+            var mt = cands.filter(function (c) { return c.indexOf(tok) === 0 });
+            if (mt.length === 1) inp.value = before + mt[0] + (mt[0].slice(-1) === '/' ? '' : ' ');
+            else if (mt.length > 1) { var p = mt[0]; mt.forEach(function (x) { while (x.indexOf(p) !== 0) p = p.slice(0, -1) }); if (p.length > tok.length) inp.value = before + p }
+        }
+        inp.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { var v = inp.value; if (v.trim()) { hist.push(v); hi = hist.length } run(v); inp.value = '' }
+            else if (e.key === 'ArrowUp') { if (hi > 0) { hi--; inp.value = hist[hi] } e.preventDefault() }
+            else if (e.key === 'ArrowDown') { if (hi < hist.length - 1) { hi++; inp.value = hist[hi] } else { hi = hist.length; inp.value = '' } e.preventDefault() }
+            else if (e.key === 'Tab') { e.preventDefault(); complete() }
+        });
+        out.addEventListener('click', function () { if (!window.getSelection().toString()) inp.focus() });
+        ['ls', 'tree', 'cat README.txt', 'hint', 'status', 'help', 'skip', 'replay', 'clear'].forEach(function (c) {
+            var b = document.createElement('button'); b.textContent = c; b.onclick = function () { hist.push(c); hi = hist.length; run(c); inp.focus() }; document.getElementById('chips').appendChild(b)
+        });
+        setLink('SEARCHING'); setBat(2); prEl.textContent = prompt();
+        say(boot());
+    </script>
+</body>
+
+</html>
