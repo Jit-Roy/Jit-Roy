@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>EXPLORER-1</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -248,10 +248,11 @@
         var RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         /* ---------- progression state ----------
-           st.p is the story stage (2-5), never shown to the player. Stages advance only when the player
-           performs an action (connect, descend, unlock). Reading files is never required. */
-        function newSt() { return { p: 2, charged: false, keySeen: false, sent: false, bat: 2, below: false, mission: false, ended: false, n0: 0 } }
-        function newHL() { return { power: 0, key: 0, connect: 0, below: 0, mission: 0, end: 0 } }
+           st.p is the story stage (2-7), never shown to the player. Stages advance only when the player
+           performs a concrete action (recharge, scan, follow, connect, descend, unlock, prompt, maint, recover).
+           Reading files is never required, but the right file is always what tells you the right argument. */
+        function newSt() { return { p: 2, parged: false, keySeen: false, sent: false, below: false, mission: false, netFound: false, pcapDone: false, trainDone: false, exploited: false, forensicsDone: false, ended: false, n0: 0 } }
+        function newHL() { return { power: 0, key: 0, network: 0, pcap: 0, connect: 0, below: 0, mission: 0, train: 0, service: 0, forensics: 0, end: 0 } }
         var st = newSt(), HL = newHL();
 
         var GC = '▒░#%/\\|:;*?&@';
@@ -293,7 +294,7 @@
         }
         function say(a) { a.forEach(function (i) { Q.push(i) }); if (!running) pump() }
 
-        /* ---------- the civilization's last recording ---------- */
+        /* ---------- the civilization's last recording (simple shift cipher - their "hello") ---------- */
         var KEY = 'FIRST-HELLO-ERID';
         var FINAL = ["Hello, Earth.", "We heard you before you heard us.", "For a long time we only listened.", "Your explorer spoke to the lattice each night, and we learned Your words.", "You are never alone here.", "", "Take our greeting, this will open the door:", "", "KEY: " + KEY, "", "- the Lattice"].join('\n');
         function rotF(t, n) { n = ((n % 26) + 26) % 26; return t.replace(/[a-z]/gi, function (c) { var b = c < 'a' ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - b + n) % 26 + b) }) }
@@ -301,14 +302,64 @@
         function pulse(t) { return toBin(rotF(t, 3)) }
         function toHex(t) { var o = ''; for (var i = 0; i < t.length; i++)o += ('0' + t.charCodeAt(i).toString(16)).slice(-2); return o }
 
+        /* ---------- 1987-era weak stream cipher (5-bit LFSR, taps at bits 0 and 2) ---------- */
+        function lfsrBits(seed, nBits) { var reg = seed & 0x1F; if (!reg) reg = 1; var bits = []; for (var i = 0; i < nBits; i++) { bits.push(reg & 1); var fb = ((reg) ^ (reg >> 2)) & 1; reg = (reg >> 1) | (fb << 4) } return bits }
+        function lfsrXor(text, seed) { var bits = lfsrBits(seed, text.length * 8), out = ''; for (var i = 0; i < text.length; i++) { var kb = 0; for (var j = 0; j < 8; j++) kb |= bits[i * 8 + j] << j; out += String.fromCharCode(text.charCodeAt(i) ^ kb) } return out }
+        var MISSION_SEED = 3; /* 1987 mod 31 - never shown to the player, only recovered by lfsr --crack */
+        var CMDR_MSG = "the lattice is only a door. he is still below. tell my son to stop looking for me";
+
+        /* ---------- the entity's channel: XOR with a repeating key, crackable from a known crib ---------- */
+        var XKEY = 'ERID87';
+        function xorRep(text, key) { var out = ''; for (var i = 0; i < text.length; i++)out += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length)); return out }
+
+        /* ---------- a cheap but deterministic checksum, used the way sha256sum is used here ---------- */
+        function shipHash(t) { var h1 = 0x811c9dc5 >>> 0, h2 = 0x9e3779b9 >>> 0; for (var i = 0; i < t.length; i++) { h1 = ((h1 ^ t.charCodeAt(i)) * 16777619) >>> 0; h2 = ((h2 + t.charCodeAt(i)) * 2654435761) >>> 0 } var hex = function (n) { return ('00000000' + (n >>> 0).toString(16)).slice(-8) }; return hex(h1) + hex(h2) + hex(h1 ^ h2) + hex(~h2) }
+
         /* ---------- filesystem ---------- */
         function D(o) { return { d: o } }
+        function telemetryRaw() {
+            var rows = [
+                ['10:40:01', 'CELL-A', 'FAULT', 'CRACKED'], ['10:42:01', 'LATTICE', 'OK', '-'], ['10:44:01', 'CELL-B', 'OK', '-'],
+                ['10:46:01', 'REACTOR', 'FAULT', 'SURGE'], ['10:48:01', 'LATTICE', 'OK', '-'], ['10:50:01', 'NODE-UNK', 'ACTIVE', 'UNDOCUMENTED'],
+                ['10:52:01', 'CELL-A', 'FAULT', 'CRACKED'], ['10:54:01', 'LATTICE', 'OK', '-'], ['10:56:01', 'CELL-B', 'OK', '-'],
+                ['10:58:01', 'REACTOR', 'FAULT', 'SURGE'], ['11:00:01', 'LATTICE', 'OK', '-'], ['11:02:01', 'CELL-A', 'FAULT', 'CRACKED'],
+                ['11:04:01', 'NODE-UNK', 'ACTIVE', 'UNDOCUMENTED'], ['11:06:01', 'LATTICE', 'OK', '-'], ['11:08:01', 'CELL-B', 'OK', '-'],
+                ['11:10:01', 'REACTOR', 'FAULT', 'SURGE'], ['11:12:01', 'LATTICE', 'OK', '-'], ['11:14:01', 'CELL-A', 'FAULT', 'CRACKED'],
+                ['11:16:01', 'LATTICE', 'OK', '-'], ['11:18:01', 'NODE-UNK', 'ACTIVE', 'UNDOCUMENTED'], ['11:20:01', 'CELL-B', 'OK', '-'],
+                ['11:22:01', 'REACTOR', 'FAULT', 'SURGE'], ['11:24:01', 'LATTICE', 'OK', '-'], ['11:26:01', 'CELL-A', 'FAULT', 'CRACKED']
+            ];
+            return rows.map(function (r) { return '0540.' + r[0] + ',' + r[1] + ',' + r[2] + ',' + r[3] }).join('\n')
+        }
+        function humSamples() {
+            var n = 32, rate = 100, tone = 87, a = [];
+            for (var i = 0; i < n; i++) a.push(Math.round(50 * Math.sin(2 * Math.PI * tone * i / rate) + 50));
+            return a.join(',')
+        }
+        function pulsesRaw() {
+            var word = 'WATCHERS', bits = [];
+            for (var i = 0; i < word.length; i++) { var code = word.charCodeAt(i); for (var b = 7; b >= 0; b--)bits.push((code >> b) & 1) }
+            return bits.map(function (bit, i) { return bit ? (88 + (i % 3)) : (9 + (i % 3)) }).join(',')
+        }
+        var pcapFrags = (function () { var m = 'SINCE 1987 WE LISTEN'; return [m.slice(0, 5), m.slice(5, 10), m.slice(10, 15), m.slice(15, 20)] })();
+        function capturePcap() {
+            var lines = [
+                'SEQ=03 TTL=255 LEN=05 CRC=OK  TIME=1987-09-14T02:11:02Z DATA=' + toHex(pcapFrags[2]),
+                'SEQ=01 TTL=255 LEN=05 CRC=OK  TIME=1987-09-14T02:11:00Z DATA=' + toHex(pcapFrags[0]),
+                'SEQ=05 TTL=255 LEN=05 CRC=BAD TIME=1987-09-14T02:11:09Z DATA=' + toHex('%%garb'),
+                'SEQ=02 TTL=255 LEN=05 CRC=OK  TIME=1987-09-14T02:11:01Z DATA=' + toHex(pcapFrags[1]),
+                'SEQ=02 TTL=255 LEN=05 CRC=OK  TIME=1987-09-14T02:11:01Z DATA=' + toHex(pcapFrags[1]),
+                'SEQ=04 TTL=255 LEN=05 CRC=OK  TIME=1987-09-14T02:11:03Z DATA=' + toHex(pcapFrags[3])
+            ];
+            return lines.join('\n')
+        }
+        var LOCKBYTES = [0x00, 0x02, 0x07, 0xC3, 0x03, 0x07, 0xE4, 0x04];
+        function lockBin() { return LOCKBYTES.map(function (b) { return ('0' + b.toString(16)).slice(-2) }).join('') + toHex('LOCK-REV-A1987') }
         var FS = D({
             home: D({
                 explorer: D({
-                    'README.txt': ["EXPLORER-1 // ONBOARD COMPUTER // REMOTE SHELL", "", "To whoever is on Earth: you are reading this, so my first message arrived.", "", "That message was only the beginning. Everything else I recorded here is", "still on this machine, and I cannot push it to you myself. The transmitter", "only had enough left for a single burst, and I already spent it.", "", "So the rest is yours to pull. I left an archive queued in ship/comms/.", "It is locked, and the link cannot hold at 2% battery. In order:", "", "  1. Give the ship enough power to hold a connection.", "  2. Find the word that unlocks the archive. The civilization gave it to me.", "  3. Open a channel that can carry the downlink.", "", "Everything you need is in this filesystem.", "Type \"help\" for commands. Read before you act."].join('\n'),
+                    'README.txt': ["EXPLORER-1 // ONBOARD COMPUTER // REMOTE SHELL", "", "To whoever is on Earth: you are reading this, so my first message arrived.", "", "That message was only the beginning. Everything else I recorded here is", "still on this machine, and I cannot push it to you myself. The transmitter", "only had enough left for a single burst, and I already spent it.", "", "So the rest is yours to pull. I left an archive queued in ship/comms/.", "It is locked, and the link cannot hold at 2% battery. In order:", "", "  1. Give the ship enough power to hold a connection.", "  2. Find the word that unlocks the archive. The civilization gave it to me.", "  3. Map the ship's own network. Something undocumented is drawing on it.", "  4. Open a channel that can carry the downlink.", "", "Everything you need is in this filesystem.", "Type \"help\" for commands. Read before you act."].join('\n'),
                     '.signal': ["You found the dotfile. Most people never look.", "", "Whoever you are, on whichever side of the distance:", "they are not dangerous. They are curious. Like us.", "", "Keep looking at the edges."].join('\n'),
-                    '.shell_history': ["bin -d contact/pulse_001.sig        # nonsense. why is it all shifted?", "recharge cell-a --source solar      # nothing happened", "recharge cell-a --source reactor    # sparks, smell of burning", "cat logs/day-0204.log", "cat logs/day-0311.log", "connect --channel 1                 # static. only static."].join('\n'),
+                    '.shell_history': ["bin -d contact/pulse_001.sig        # nonsense. why is it all shifted?", "recharge cell-a --source solar      # nothing happened", "recharge cell-a --source reactor    # sparks, smell of burning", "cat logs/day-0204.log", "cat logs/day-0311.log", "connect --channel 1                 # static. only static.", "scan 10.19.88.4                     # unreachable. that array is gone.", "cat ship/network/leases.txt         # one address with no name"].join('\n'),
                     journal: D({
                         '01_departure.txt': ["I left Earth the way people leave a conversation they are sure will continue.", "", "Everyone asked what I was looking for.", "I never had a good answer. I only knew I could not stay where the map ended.", "", "Other people read the edge of a chart as a warning.", "I read it as an invitation nobody had bothered to sign."].join('\n'),
                         '02_arrival.txt': ["Erid is not what the survey said.", "", "The air is a thin violet haze of methane and ammonia. I have not taken", "my helmet off once, and I will not. No forests, no oceans, no birds.", "I set the lander down at the edge of the lattice fields: rows of tall", "crystalline lattices running to the horizon, each one humming faintly at", "the edge of hearing.", "", "At dusk small lights drift between the lattices, slowly, like they are", "tending them. I have started calling them lanterns.", "", "The sensors call the hum geology. Geology does not hum in tune."].join('\n'),
@@ -320,16 +371,17 @@
                         'day-0001.log': ["DAY 0001 | Arrived in high orbit, planet Erid. All systems nominal.", "DAY 0001 | Crew morale: high. Crew: one. Coffee: abundant."].join('\n'),
                         'day-0030.log': ["DAY 0030 | Set the lander down at the edge of the lattice fields.", "DAY 0030 | Atmosphere: methane and ammonia haze. Suit stays on. Ground is humming."].join('\n'),
                         'day-0061.log': ["DAY 0061 | The lattice answered my signal. Pulses, not words.", "DAY 0061 | Recording everything. I have not slept. I regret nothing."].join('\n'),
-                        'day-0099.log': ["DAY 0099 | Wrote the first reply out as 0s and 1s. Long pulse is 1, short is 0.", "DAY 0099 | Every reply is shifted three letters forward. Always three. I think it is how they say hello.", "DAY 0099 | Notes are in contact/lexicon.txt."].join('\n'),
+                        'day-0099.log': ["DAY 0099 | Wrote the first reply out as 0s and 1s. Long pulse is 1, short is 0.", "DAY 0099 | Every reply is shifted three letters forward. Always three. I think it is how they say hello."].join('\n'),
                         'day-0204.log': ["DAY 0204 | Ring debris. The solar array sheared clean off. Gone.", "DAY 0204 | The impact cracked cell-a. Do not charge cell-a again. Ever.", "DAY 0204 | Heater holding. Barely."].join('\n'),
                         'day-0311.log': ["DAY 0311 | Power surge. The reactor coupling cracked.", "DAY 0311 | Do NOT route anything through the reactor again. Noted, underlined, regretted.", "DAY 0311 | Cell-c feeds life support. I am not touching cell-c."].join('\n'),
+                        'day-0398.log': ["DAY 0398 | Ran a network scan on a whim. There is an address on our own subnet", "DAY 0398 | with no lease, no name, nothing in the manifest. It answers a port scan.", "DAY 0398 | I do not know what put it there. It was not me."].join('\n'),
                         'day-0412.log': ["DAY 0412 | Quiet night. The lattice hums at the same pitch as my transmitter.", "DAY 0412 | It offered a tap. I do not know why. I did not refuse.", "DAY 0412 | Tapping the lattice works. Slow, but it works. Cell-b took the charge well."].join('\n'),
                         'day-0498.log': ["DAY 0498 | Sent the first message tonight. The battery fell to 2% afterwards.", "DAY 0498 | If Earth has it, Earth can reach this terminal. They will have to open the channel themselves.", "DAY 0498 | I cannot hold it open from here. The downlink needs 20% to stay up, and the archive will not release without the lattice's word."].join('\n'),
                         'day-0540.log': ["DAY 0540 | Archive queued in ship/comms/. Locked with the word they gave me.", "DAY 0540 | Channel check: not every channel is usable. See ship/comms/channels.txt.", "DAY 0540 | Earth is about sixteen light years away. A test ping should take thirty-two years round trip.", "DAY 0540 | It took four seconds. I do not think the transmitter is doing that. I have stopped asking.", "DAY 0540 | If someone is reading this, thank you for being here."].join('\n')
                     }),
                     contact: D({
                         'README.contact': ["CONTACT RECORDINGS // EXPLORER-1", "", "These are the pulses I recorded at the lattice. Five recordings, in order.", "final.sig is the last and the longest. It came the night before the", "transmitter began to fail.", "", "I have not decoded any of them to my satisfaction.", "My notes are in lexicon.txt."].join('\n'),
-                        'lexicon.txt': ["LEXICON (incomplete)", "", "Pulse format: long = 1, short = 0. Eight pulses make one character.", "Every recording is written out as 0s and 1s.", "", "Every reply comes back with its letters shifted. The shift is always the same.", "See logs for how much."].join('\n'),
+                        'lexicon.txt': ["LEXICON (incomplete)", "", "Pulse format: long = 1, short = 0. Eight pulses make one character.", "Every recording is written out as 0s and 1s.", "", "Every reply comes back with its letters shifted. The shift is always the same.", "See logs to get more info."].join('\n'),
                         'pulse_001.sig': pulse('hello'),
                         'pulse_002.sig': pulse('who are you'),
                         'pulse_003.sig': pulse('you are far from home'),
@@ -340,11 +392,17 @@
                         power: D({
                             'status.txt': ["POWER STATUS (day 0540)", "  cell-a   CRACKED    damaged casing", "  cell-b   EMPTY      intact", "  cell-c   RESERVED   wired to life support", "", "  transmitter: 02%    (the downlink needs 20% to hold)"].join('\n'),
                             'sources.txt': ["POWER SOURCES", "  reactor   fusion reactor coupling", "  solar     solar array", "  lattice   resonant tap on the planet's lattice"].join('\n'),
-                            'manual.txt': ["POWER MANUAL", "", "  recharge <cell> --source <source>", "", "A cell can be charged from one source at a time. A damaged cell or a", "failed source will refuse to charge. Cells are listed in status.txt,", "sources in sources.txt. The ship log records what has broken and what", "still works. The downlink needs at least 20% power to hold."].join('\n')
+                            'manual.txt': ["POWER MANUAL", "", "  recharge <cell> --source <source>", "", "A cell can be charged from one source at a time. A damaged cell or a", "failed source will refuse to charge. Cells are listed in status.txt,", "sources in sources.txt. The ship log records what has broken and what", "still works. The downlink needs at least 20% power to hold."].join('\n'),
+                            'telemetry.raw': telemetryRaw()
+                        }),
+                        network: D({
+                            'README.txt': ["NETWORK NOTES", "", "This terminal: 10.19.87.4/28  (see: ip addr)", "", "A /28 on 10.19.87.0 covers host addresses .1 through .14.", ".0 is the network address and .15 is the broadcast address.", "Anything outside 10.19.87.0/28 is not on this network, whatever a cable label says.", "", "leases.txt lists what has a name on this subnet.", "Anything in range with no name is worth a scan: scan <ip>", "A ping to the right address will tell you something is very wrong with it."].join('\n'),
+                            'leases.txt': ["IP              HOST              LEASE", "10.19.87.1      gateway           static", "10.19.87.2      life-support      static", "10.19.87.9      lattice-relay     static", "10.19.88.4      solar-array       EXPIRED (unit destroyed day 0204)", "10.19.87.13     -                 NO LEASE ON FILE", "10.19.87.15     -                 (broadcast - not a host)"].join('\n')
                         }),
                         comms: D({
                             'channels.txt': ["CH   FREQ       STATUS", "1    8.42 GHz   JAMMED   (ring debris noise)", "2    8.44 GHz   DEAD     (transmitter coil failed)", "3    8.46 GHz   CLEAR    (weak, but stable)", "4    7.15 GHz   UNKNOWN"].join('\n'),
                             'transmitter.cfg': ["mode       = downlink", "power_min  = 20%", "archive    = outbox/archive.pkg", "lock       = authorisation word required", "usage      = connect --channel <N> --key <KEY>"].join('\n'),
+                            'capture.pcap': capturePcap(),
                             outbox: D({
                                 'archive.pkg': ["ARCHIVE.PKG", "3 messages queued.", "LOCKED.", "", "Open a channel with the right word to receive them."].join('\n')
                             })
@@ -353,8 +411,6 @@
                 })
             })
         });
-
-        /* ---------- content unlocked as the story advances ---------- */
         function ex() { return FS.d.home.d.explorer.d }
         function obsText() { return ['OBSERVER RECORD // UNKNOWN', '', 'Earth terminal accessed.', 'Remote user detected.', 'Interaction count: ' + nCmd + '.', '', 'Subject identification: UNKNOWN.', '', 'You are not the first.', '', 'If you wish to be seen, say so: reply WHO'].join('\n') }
         function archiveText() {
@@ -373,7 +429,9 @@
                 'survey_001.log': ['DAY 0007 | Detected a carrier from underground. It was already transmitting.', 'DAY 0007 | Timestamps say it began long before my landing. Direction of the beam: Earth.'].join('\n'),
                 'survey_002.log': ['DAY 0112 | The lattices are not geology. They are antenna elements, all wired to one source below.', 'DAY 0112 | The probe needs a site code: the site id from location.map, a dash, the depth in metres from coordinates.dat.', 'DAY 0112 | Usage: descend <SITE>-<DEPTH>   (no spaces)'].join('\n'),
                 'anomaly.log': ['DAY 0388 | When I stop talking, something keeps tapping back. It is not the lanterns.', 'DAY 0388 | Something beneath the surface has been answering me. I never told the lattice where I sleep.'].join('\n'),
-                'location.map': ['      ~  ~  ~  lattice fields  ~  ~  ~', '   [SITE3]       [SITE5]       [SITE9]', '                   |', '            [SITE7]  <- the humming one', '                   |', '      (nothing else is marked)'].join('\n')
+                'location.map': ['      ~  ~  ~  lattice fields  ~  ~  ~', '   [SITE3]       [SITE5]       [SITE9]', '                   |', '            [SITE7]  <- the humming one', '                   |', '      (nothing else is marked)'].join('\n'),
+                'lock.bin': lockBin(),
+                'lock.readme': ['Found this wired into a plate near the shaft entrance, below the lattices.', 'It looks like some kind of lock controller. Old. Not the lattice\'s design.', '', 'strings and xxd will show you what it is made of.', 'Reading the logic itself will need something smarter than either.'].join('\n')
             });
             h['.coordinates'] = 'Not Erid. A place on Earth. I kept the numbers in case anyone asked where home was.'
         }
@@ -382,22 +440,31 @@
             h.ship.d.archive = D({
                 previous_mission: D({
                     'mission_001.txt': 'MISSION ERID-1987-A. Crew of three. Purpose: investigate a periodic signal from 40 Eridani. Landing site: the lattice fields.',
-                    'mission_002.txt': ['Day 12: the lattice replied.', 'Day 31: the Commander says it called him by name.', 'Day 33: the structure below does not use the lattice\'s shift of three. Its letters are shifted seven.', 'Day 40: the Commander descends to the structure. I stay with the lander.'].join('\n'),
+                    'mission_002.txt': ['Day 12: the lattice replied.', 'Day 31: the Commander says it called him by name.', 'Day 33: the structure below does not use the lattice\'s shift of three. Its letters are shifted seven.', "Day 40: the Commander descends to the structure. I stay with the lander.", "Day 41: the recorder scrambles everything it saves, some engineering-grade stream cipher from the lab. Vasquez says it is weak enough to break if you can recover its internal state."].join('\n'),
                     'crew_manifest.dat': ['CMDR  A. ROY   (next of kin: son, age 6)', 'ENG   T. VASQUEZ', 'MED   K. ODUYA'].join('\n'),
                     'transmission.log': ['1987 | Last burst received on Earth. No reply was ever sent.', '1987 | Pulse pattern identical to the one the lattice used on Roy.'].join('\n'),
-                    'final_recording.sig': pulse('the lattice is only a door. he is still below. tell my son to stop looking for me')
+                    'final_recording.sig': toHex(lfsrXor(CMDR_MSG, MISSION_SEED))
                 })
             });
             h['.last_message'] = ['Dad,', '', 'I read your last log again tonight. I got further than you did.', 'I think I know why you stopped answering, and I'].join('\n')
+        }
+        function addSensors() {
+            var h = ex();
+            h.ship.d.sensors = D({
+                'README.txt': ['LATTICE HUM // 32 samples, taken at a sample rate of 100 Hz.', '', 'fft will show a dominant bin. If its frequency sits above 50 Hz', '(half the sample rate), you are looking at an alias: a tone above', 'the Nyquist limit folds back down. The real tone is (sample_rate - observed).', '', 'pulses.raw: raw amplitudes from a burst, long pulses and short pulses,', 'mixed with noise. Pick a threshold between the two clusters and decide', 'for yourself what counts as "long". threshold outputs bits; bin -d reads bits.', '', 'blips.dat: unidentified lights near the lattice, amplitude and duration logged.', 'Most are lanterns. cluster will tell you which ones are not.'].join('\n'),
+                'hum.samples': humSamples(),
+                'pulses.raw': pulsesRaw(),
+                'blips.dat': ['blip01,14,4', 'blip02,16,3', 'blip03,12,5', 'blip04,83,39', 'blip05,15,4', 'blip06,13,6', 'blip07,80,41', 'blip08,17,3', 'blip09,11,4', 'blip10,85,37'].join('\n')
+            })
         }
         function addCh5() {
             var h = ex(), c = h.contact.d;
             h['.observer'] = obsText();
             c['README.contact'] += '\n\nThree more recordings, unknown_*, appeared after the archive arrived.\nI could not place them.';
-            c['lexicon.txt'] += '\n\nunknown_*.sig: not the lattice\'s shift. Whoever speaks here counts differently.';
-            c['unknown_001.sig'] = toBin(rotF('do not follow the warm light down. it was here before the lattice', 7));
-            c['unknown_002.sig'] = toBin(rotF('you came back. you stayed. where is the rest of you', 7));
-            c['unknown_003.sig'] = toBin(rotF('we know the one who sits at the far end of the line. you have listened longer than you think', 7))
+            c['lexicon.txt'] += '\n\nunknown_*.sig: not the lattice\'s shift. XOR with a repeating key, not a rotation.\nThe first words of any one of them are always the same two words. Start there.';
+            c['unknown_001.sig'] = toHex(xorRep('Hello, Earth. do not follow the warm light down. it was here before the lattice', XKEY));
+            c['unknown_002.sig'] = toHex(xorRep('Hello, Earth. you came back. you stayed. where is the rest of you', XKEY));
+            c['unknown_003.sig'] = toHex(xorRep('Hello, Earth. we know the one who sits at the far end of the line. you have listened longer than you think', XKEY))
         }
 
         var cwd = ['home', 'explorer'];
@@ -425,7 +492,7 @@
         /* ---------- shell parsing ---------- */
         function tokenize(s) { var t = [], cur = '', q = null, has = false; for (var i = 0; i < s.length; i++) { var c = s[i]; if (q) { if (c === q) q = null; else cur += c } else if (c === '"' || c === "'") { q = c; has = true } else if (/\s/.test(c)) { if (cur || has) { t.push(cur); cur = ''; has = false } } else cur += c } if (cur || has) t.push(cur); return t }
         function splitPipes(s) { var parts = [], cur = '', q = null; for (var i = 0; i < s.length; i++) { var c = s[i]; if (q) { cur += c; if (c === q) q = null } else if (c === '"' || c === "'") { q = c; cur += c } else if (c === '|') { parts.push(cur); cur = '' } else cur += c } parts.push(cur); return parts }
-        function flags(a) { var o = {}, pos = []; for (var i = 0; i < a.length; i++) { var x = a[i]; if (x.slice(0, 2) === '--' && x.indexOf('=') > 0) { o[x.slice(2, x.indexOf('='))] = x.slice(x.indexOf('=') + 1) } else if (x.slice(0, 2) === '--' || (x[0] === '-' && x.length === 2 && isNaN(x))) { o[x.replace(/^-+/, '')] = a[i + 1]; i++ } else pos.push(x) } return { o: o, pos: pos } }
+        function flags(a) { var o = {}, pos = []; for (var i = 0; i < a.length; i++) { var x = a[i]; if (x.slice(0, 2) === '--' && x.indexOf('=') > 0) { o[x.slice(2, x.indexOf('='))] = x.slice(x.indexOf('=') + 1) } else if (x.slice(0, 2) === '--' || (x[0] === '-' && x.length === 2 && isNaN(x))) { o[x.replace(/^-+/, '')] = a[i + 1]; i++ } else if (x[0] === '-' && x.length > 2 && /[a-zA-Z]/.test(x[1]) && isNaN(x)) { o[x[1]] = x.slice(2) } else pos.push(x) } return { o: o, pos: pos } }
 
         /* ---------- plain commands ---------- */
         function linesCmd(name, a, si, tail) {
@@ -442,15 +509,61 @@
             if (si != null) return { t: si };
             return { e: cmd + ': give a file or pipe into it' }
         }
+        function numList(txt) { return txt.split(/[,\s]+/).filter(function (x) { return x !== '' }).map(Number) }
         var cmds = {
-            help: function () { return R("Files and navigation\n  ls [-a] [-l] [path]    list a folder (-a shows hidden files)\n  cd <path>   pwd   tree [path]   find [path] -name <glob>\n  cat <file...>   head/tail [-n N] <file>   file <path>\n\nSearching and processing (pipes work: cmd | cmd | cmd)\n  grep [-i] [-n] [-r] <pattern> [paths]    wc [-l] [file]\n  bin -d [file]    hex -d [file]    base64 -d [file]    rot <n> [file]    echo <text>\n\nShip systems\n  status   recharge   connect   reply   uplink   descend   unlock      (see: man <command>)\n\nOther\n  man <cmd>  hint  history  skip  clear") },
+            help: function () {
+                return R(["Files and navigation", "  ls [-a] [-l] [path]    list a folder (-a shows hidden files)", "  cd <path>   pwd   tree [path]   find [path] -name <glob>", "  cat <file...>   head/tail [-n N] <file>   file <path>", "",
+                    "Searching and processing (pipes work: cmd | cmd | cmd)", "  grep [-i] [-n] [-r] <pattern> [paths]    wc [-l] [file]", "  sort [-n] [-r] [-u]   uniq [-c]   cut -d<delim> -f<N>   awk '{print $N}' or '/re/'",
+                    "  bin -d [file]    hex -d [file]    base64 -d [file]    rot <n> [file]    echo <text>",
+                    "  xor <key>|--crack <crib> [file]    lfsr --crack [file]    sha256sum [file]",
+                    "  strings [file]    xxd [file]    disasm [file]", "  fft [--rate N] [file]    threshold <N> [file]    cluster [file]", "",
+                    "Ship systems", "  status   recharge   ip   ping   traceroute   scan   tcpdump   follow   connect", "  descend   unlock   maint   last   recover   prompt   reply   uplink   (see: man <command>)", "",
+                    "Other", "  man <cmd>  id  hint  history  skip  clear"].join('\n'))
+            },
             man: function (a) {
-                var m = { ls: 'ls [-a] [-l] [path]  list files. -a includes hidden (dot) files.', cat: 'cat <file...>  print files. With no file, prints what was piped in.', cd: 'cd <path>  change folder. cd with no argument goes home. cd .. goes up.', grep: 'grep [-i] [-n] [-r] <pattern> [paths]  print matching lines. -r searches folders recursively, -i ignores case.', find: 'find [path] -name <glob> [-type f|d]  list matching paths.', bin: 'bin -d [file]  decode 0s and 1s (8 bits per character) into text. Without -d it encodes.', base64: 'base64 -d [file]  decode base64 text. Without -d it encodes.', rot: 'rot <n> [file]  rotate every letter FORWARD by n places (wraps after z).', head: 'head [-n N] <file>  first N lines (default 10).', tail: 'tail [-n N] <file>  last N lines (default 10).', wc: 'wc [-l] [file]  count lines, words and characters.', file: 'file <path>  guess what kind of file this is.', tree: 'tree [path]  show a folder as a tree.', recharge: 'recharge <cell> --source <source>  charge a power cell from a source. See ship/power/.', connect: 'connect --channel <N> --key <KEY>  open a downlink channel and receive the queued archive. Needs 20% power, a channel that can carry the signal, and the right key.', reply: 'reply <message>  send a message back to the lattice, in your own words. Works once the archive is received. The lattice answers according to what you have uncovered.', uplink: 'uplink  open a route back to the sender. Works once the archive is received.', hint: 'hint  get a nudge for the current step (3 per step).', status: 'status  power, channel and archive summary.', hex: 'hex -d [file]  decode hexadecimal digit pairs into text.', descend: 'descend <site-code>  send a probe below the surface. The code is built from the files in expedition/.', unlock: 'unlock <mission-id>  open a locked mission record.' };
+                var m = {
+                    ls: 'ls [-a] [-l] [path]  list files. -a includes hidden (dot) files.', cat: 'cat <file...>  print files. With no file, prints what was piped in.', cd: 'cd <path>  change folder. cd with no argument goes home. cd .. goes up.',
+                    grep: 'grep [-i] [-n] [-r] <pattern> [paths]  print matching lines. -r searches folders recursively, -i ignores case.', find: 'find [path] -name <glob> [-type f|d]  list matching paths.',
+                    sort: 'sort [-n] [-r] [-u] [file]  sort lines. -n numeric, -r reverse, -u drop consecutive-after-sort duplicates.',
+                    uniq: 'uniq [-c] [file]  collapse ADJACENT duplicate lines (sort first if they are not already adjacent). -c prefixes a count.',
+                    cut: "cut -d<delim> -f<N[,N...]> [file]  print the given fields of each line, split on delim.",
+                    awk: "awk '{print $N}' [-F<sep>] [file]   or   awk '/regex/' [file]  print a field, or lines matching a pattern.",
+                    bin: 'bin -d [file]  decode 0s and 1s (8 bits per character) into text. Without -d it encodes.', hex: 'hex -d [file]  decode hexadecimal digit pairs into text. Without -d it encodes.',
+                    base64: 'base64 -d [file]  decode base64 text. Without -d it encodes.', rot: 'rot <n> [file]  rotate every letter FORWARD by n places (wraps after z).',
+                    xor: "xor <key> [file]  XOR with a repeating text key.   xor --crack <crib> [file]  XOR the start of the input against a known plaintext crib to recover the key.",
+                    lfsr: "lfsr --crack [file]  brute-force a small (5-bit) LFSR keystream and print whichever seed decrypts to readable text.",
+                    sha256sum: 'sha256sum [file]  print a checksum of the file\'s exact contents. Use it to tell an authentic file from a tampered one.',
+                    strings: 'strings [file]  pull printable text runs out of binary-looking (hex) data.', xxd: 'xxd [file]  hex dump: offset, hex bytes, and their ASCII.',
+                    disasm: 'disasm [file]  disassemble a small firmware image into readable pseudo-assembly.',
+                    fft: 'fft [--rate N] [file]  find the dominant frequency in a list of numeric samples (default rate 100).',
+                    threshold: 'threshold <N> [file]  turn amplitude values into 1s and 0s by comparing each to N. Pipe into bin -d.',
+                    cluster: "cluster [file]  nearest-neighbour cluster a file of 'id,x,y' points into two groups and label each point.",
+                    head: 'head [-n N] <file>  first N lines (default 10).', tail: 'tail [-n N] <file>  last N lines (default 10).', wc: 'wc [-l] [file]  count lines, words and characters.',
+                    file: 'file <path>  guess what kind of file this is.', tree: 'tree [path]  show a folder as a tree.',
+                    recharge: 'recharge <cell> --source <source>  charge a power cell from a source. See ship/power/.',
+                    ip: 'ip addr  show this terminal\'s network address and interfaces.',
+                    ping: 'ping <ip>  measure round-trip time to a host on the ship network.',
+                    traceroute: 'traceroute <ip>  show the hops between here and a host.',
+                    scan: 'scan <ip>  port-scan a host on the ship network (ship/network/leases.txt lists known hosts; the CIDR range is in README.txt).',
+                    tcpdump: 'tcpdump -r <file> [filter]  print packet summaries from a capture file. filter is an optional substring, e.g. CRC=BAD.',
+                    follow: 'follow <file>  reassemble a capture\'s packets in sequence order, drop bad or duplicate ones, and decode the stream.',
+                    connect: 'connect --channel <N> --key <KEY>  open a downlink channel and receive the queued archive. Needs 20% power, the ship\'s own network mapped, and the right key.',
+                    descend: 'descend <site-code>  send a probe below the surface. The code is built from the files in expedition/.',
+                    unlock: 'unlock <code>  unlock a firmware-locked record. Find the code by disassembling the matching .bin file.',
+                    maint: 'maint <ip:port> <command>  talk to a service found by scan. Old daemons like this one do not always sanitize what follows a semicolon.',
+                    last: 'last  show session history for this terminal, if you have the access to read it.',
+                    recover: 'recover <file>  attempt to recover a deleted or corrupted file from a backup, if you have the access to read one.',
+                    prompt: "prompt <text>  send a prefix to whatever is answering on the line. If it has this exact text memorized, it will finish it.",
+                    reply: 'reply <message>  send a message back to the lattice, in your own words. Works once the archive is received. The lattice answers according to what you have uncovered.',
+                    uplink: 'uplink  open a route back to the sender. Works once the archive is received.', hint: 'hint  get a nudge for the current step (3 per step).', status: 'status  power, channel and archive summary.',
+                    id: "id  show this terminal's own session fingerprint."
+                };
                 if (!a[0]) return E('man: which command? Try: man grep'); return m[a[0]] ? R(m[a[0]]) : E('No manual entry for ' + a[0])
             },
             pwd: function () { return R('/' + cwd.join('/')) },
             whoami: function () { return R('earth  (remote)') },
-            date: function () { return R('Fri Nov 06 2026  (ship clock: day 0540)') },
+            id: function () { return R('earth (remote) :: terminal 7F3A-EARTH') },
+            date: function () { return R('Sat Nov 07 2026  (ship clock: day 0540)') },
             history: function () { return R(hist.map(function (h, i) { return pad6(i + 1) + '  ' + h }).join('\n')) },
             echo: function (a) { return R(a.join(' ')) },
             cd: function (a) { var p = a[0] || '~'; var n = getNode(norm(p)); if (!n) return E('cd: ' + p + ': No such file or directory'); if (!n.d) return E('cd: ' + p + ': Not a directory'); cwd = norm(p); return R('') },
@@ -556,6 +669,170 @@
                 if (file) { var nd = getNode(norm(file)); if (!nd) return E('rot: ' + file + ': No such file or directory'); if (nd.d) return E('rot: ' + file + ': Is a directory'); txt = nd } else if (si != null) txt = si; else return E('rot: give a file or pipe into it');
                 return R(rotF(txt, n))
             },
+            sort: function (a, si) {
+                var num = a.indexOf('-n') > -1, rev = a.indexOf('-r') > -1, uniqF = a.indexOf('-u') > -1, file = null;
+                a.forEach(function (x) { if (x[0] !== '-') file = x });
+                var txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('sort: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('sort: give a file or pipe into it');
+                var lines = txt.split('\n');
+                lines.sort(num ? function (x, y) { return parseFloat(x) - parseFloat(y) } : function (x, y) { return x < y ? -1 : x > y ? 1 : 0 });
+                if (rev) lines.reverse();
+                if (uniqF) lines = lines.filter(function (x, i) { return i === 0 || x !== lines[i - 1] });
+                return R(lines.join('\n'))
+            },
+            uniq: function (a, si) {
+                var count = a.indexOf('-c') > -1, file = null; a.forEach(function (x) { if (x[0] !== '-') file = x });
+                var txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('uniq: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('uniq: give a file or pipe into it');
+                var lines = txt.split('\n'), out = [];
+                for (var i = 0; i < lines.length; i++) { if (i > 0 && lines[i] === lines[i - 1]) { if (count) out[out.length - 1] = (parseInt(out[out.length - 1], 10) + 1) + ' ' + lines[i] } else out.push(count ? '1 ' + lines[i] : lines[i]) }
+                return R(out.join('\n'))
+            },
+            cut: function (a, si) {
+                var f = flags(a), delim = f.o.d || ',', fieldsArg = f.o.f;
+                if (!fieldsArg) return E('usage: cut -d<delim> -f<N[,N...]> [file]');
+                var fields = fieldsArg.split(',').map(function (x) { return parseInt(x, 10) });
+                var file = f.pos[0], txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('cut: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('cut: give a file or pipe into it');
+                var lines = txt.split('\n').map(function (ln) { var parts = ln.split(delim); return fields.map(function (i) { return parts[i - 1] == null ? '' : parts[i - 1] }).join(delim) });
+                return R(lines.join('\n'))
+            },
+            awk: function (a, si) {
+                var f = flags(a), sep = f.o.F || /\s+/, prog = f.pos[0];
+                if (!prog) return E("usage: awk '{print $N}' [-F<sep>] [file]   or   awk '/regex/' [file]");
+                var file = f.pos[1], txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('awk: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('awk: give a file or pipe into it');
+                var lines = txt.split('\n'), out = [];
+                var mPrint = prog.match(/^\{\s*print\s+\$(\d+)\s*\}$/), mRe = prog.match(/^\/(.*)\/$/);
+                if (mPrint) { var idx = parseInt(mPrint[1], 10); lines.forEach(function (ln) { var parts = ln.split(sep); out.push(parts[idx - 1] == null ? '' : parts[idx - 1]) }) }
+                else if (mRe) { var re = new RegExp(mRe[1]); lines.forEach(function (ln) { if (re.test(ln)) out.push(ln) }) }
+                else return E("awk: only '{print $N}' and '/regex/' are supported here");
+                return R(out.join('\n'))
+            },
+            xor: function (a, si) {
+                var f = flags(a), crib = f.o.crack;
+                if (crib !== undefined) {
+                    var file0 = f.pos[0], txt0; if (file0) { var n0 = getNode(norm(file0)); if (!n0 || n0.d) return E('xor: ' + file0 + ': cannot read'); txt0 = n0 } else if (si != null) txt0 = si; else return E('xor: give a file or pipe into it');
+                    var k = ''; for (var i = 0; i < crib.length; i++)k += String.fromCharCode(txt0.charCodeAt(i) ^ crib.charCodeAt(i)); return R(k)
+                }
+                var key = f.pos[0];
+                if (!key) return E('usage: xor <key> [file]   or   xor --crack <crib> [file]');
+                var file = f.pos[1], txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('xor: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('xor: give a file or pipe into it');
+                return R(xorRep(txt, key))
+            },
+            lfsr: function (a, si) {
+                var crack = a.indexOf('--crack') > -1, file = null; a.forEach(function (x) { if (x[0] !== '-') file = x });
+                var txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('lfsr: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('lfsr: give a file or pipe into it');
+                if (!crack) return E('lfsr: only --crack is supported here');
+                var best = null, bestScore = -1;
+                for (var seed = 1; seed <= 31; seed++) {
+                    var dec = lfsrXor(txt, seed), score = 0;
+                    for (var i = 0; i < dec.length; i++) { var c = dec.charCodeAt(i); if ((c >= 32 && c < 127) || c === 10) score++ }
+                    if (score > bestScore) { bestScore = score; best = { seed: seed, dec: dec } }
+                }
+                return R('state recovered (seed=' + best.seed + '):\n' + best.dec)
+            },
+            sha256sum: function (a, si) {
+                var file = a[0], txt; if (file) { var n = getNode(norm(file)); if (!n) return E('sha256sum: ' + file + ': No such file or directory'); if (n.d) return E('sha256sum: ' + file + ': Is a directory'); txt = n } else if (si != null) txt = si; else return E('sha256sum: give a file or pipe into it');
+                return R(shipHash(txt) + (file ? '  ' + file : ''))
+            },
+            strings: function (a, si) {
+                var s = source('strings', a, si); if (s.e) return E(s.e);
+                var b = s.t.replace(/\s+/g, ''); if (!/^[0-9a-fA-F]*$/.test(b) || b.length % 2) return R(s.t.split(/[^\x20-\x7e]+/).filter(function (x) { return x.length >= 4 }).join('\n'));
+                var bytes = []; for (var i = 0; i < b.length; i += 2)bytes.push(parseInt(b.slice(i, i + 2), 16));
+                var out = [], cur = '';
+                bytes.forEach(function (c) { if (c >= 32 && c < 127) cur += String.fromCharCode(c); else { if (cur.length >= 4) out.push(cur); cur = '' } });
+                if (cur.length >= 4) out.push(cur);
+                return R(out.length ? out.join('\n') : '(no printable strings found)')
+            },
+            xxd: function (a, si) {
+                var s = source('xxd', a, si); if (s.e) return E(s.e);
+                var b = s.t.replace(/\s+/g, ''), bytes = [];
+                if (/^[0-9a-fA-F]*$/.test(b) && b.length % 2 === 0 && b.length > 0) { for (var i = 0; i < b.length; i += 2)bytes.push(parseInt(b.slice(i, i + 2), 16)) }
+                else { for (var i = 0; i < s.t.length; i++)bytes.push(s.t.charCodeAt(i) & 0xff) }
+                var out = [];
+                for (var off = 0; off < bytes.length; off += 16) {
+                    var row = bytes.slice(off, off + 16);
+                    var hexPart = row.map(function (c) { return ('0' + c.toString(16)).slice(-2) }).join(' ');
+                    var asciiPart = row.map(function (c) { return (c >= 32 && c < 127) ? String.fromCharCode(c) : '.' }).join('');
+                    out.push(('00000000' + off.toString(16)).slice(-8) + '  ' + hexPart + '  ' + asciiPart)
+                }
+                return R(out.join('\n'))
+            },
+            disasm: function (a, si) {
+                var s = source('disasm', a, si); if (s.e) return E(s.e);
+                var b = s.t.replace(/\s+/g, ''); if (!/^[0-9a-fA-F]+$/.test(b) || b.length % 2) return E('disasm: input must be hex bytes');
+                var bytes = []; for (var i = 0; i < b.length; i += 2)bytes.push(parseInt(b.slice(i, i + 2), 16));
+                var out = [], i = 0;
+                while (i < bytes.length) {
+                    var op = bytes[i], addr = ('0000' + i.toString(16)).slice(-4);
+                    if (op === 0x00) { out.push(addr + ': LOAD_INPUT         A \u2190 <input>'); i += 1 }
+                    else if (op === 0x02) { var imm = (bytes[i + 1] << 8) | bytes[i + 2]; out.push(addr + ': XOR   #' + ('0000' + imm.toString(16).toUpperCase()).slice(-4) + '       A \u2190 A ^ 0x' + imm.toString(16).toUpperCase()); i += 3 }
+                    else if (op === 0x03) { var imm = (bytes[i + 1] << 8) | bytes[i + 2]; out.push(addr + ': CMP   #' + ('0000' + imm.toString(16).toUpperCase()).slice(-4) + '       flag \u2190 (A == 0x' + imm.toString(16).toUpperCase() + ')'); i += 3 }
+                    else if (op === 0x04) { out.push(addr + ': JEQ                 if flag: OK  else: FAIL'); i += 1 }
+                    else { var run = bytes.slice(i).map(function (c) { return (c >= 32 && c < 127) ? String.fromCharCode(c) : '' }).join(''); out.push(addr + ': DATA  "' + run + '"'); break }
+                }
+                return R(out.join('\n'))
+            },
+            fft: function (a, si) {
+                var f = flags(a), rate = f.o.rate ? parseFloat(f.o.rate) : 100;
+                var file = f.pos[0], txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('fft: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('fft: give a file or pipe into it');
+                var samples = numList(txt), N = samples.length;
+                if (N < 2) return E('fft: need at least 2 samples');
+                var mean = samples.reduce(function (s, v) { return s + v }, 0) / N;
+                var mags = [], maxBin = 1, maxMag = -1;
+                for (var k = 1; k <= Math.floor(N / 2); k++) {
+                    var re = 0, im = 0;
+                    for (var n2 = 0; n2 < N; n2++) { var ang = 2 * Math.PI * k * n2 / N; re += (samples[n2] - mean) * Math.cos(ang); im -= (samples[n2] - mean) * Math.sin(ang) }
+                    var mag = Math.sqrt(re * re + im * im); mags.push([k, mag]);
+                    if (mag > maxMag) { maxMag = mag; maxBin = k }
+                }
+                var freq = maxBin * rate / N;
+                var lines = mags.map(function (m) { return 'bin ' + m[0] + '  (' + (m[0] * rate / N).toFixed(1) + ' Hz)   magnitude ' + m[1].toFixed(1) });
+                lines.push('', 'dominant: bin ' + maxBin + ' -> ' + freq.toFixed(1) + ' Hz  (sample rate ' + rate + ' Hz, N=' + N + ')');
+                if (freq > rate / 2) lines.push('warning: ' + freq.toFixed(1) + ' Hz is above the Nyquist limit (' + (rate / 2) + ' Hz) for this rate. That reading is an alias: true = sample_rate - observed = ' + (rate - freq).toFixed(1) + ' Hz.');
+                return R(lines.join('\n'))
+            },
+            threshold: function (a, si) {
+                if (!a.length || isNaN(parseFloat(a[0]))) return E('usage: threshold <N> [file]');
+                var cut = parseFloat(a[0]), file = a[1], txt;
+                if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('threshold: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('threshold: give a file or pipe into it');
+                var vals = numList(txt);
+                return R(vals.map(function (v) { return v >= cut ? '1' : '0' }).join(''))
+            },
+            cluster: function (a, si) {
+                var file = a[0], txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('cluster: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('cluster: give a file or pipe into it');
+                var c1 = [12, 5], c2 = [85, 40];
+                var out = txt.split('\n').filter(Boolean).map(function (ln) {
+                    var parts = ln.split(','), id = parts[0], x = parseFloat(parts[1]), y = parseFloat(parts[2]);
+                    var d1 = Math.hypot(x - c1[0], y - c1[1]), d2 = Math.hypot(x - c2[0], y - c2[1]);
+                    return id + '  (' + x + ',' + y + ')  ' + (d2 < d1 ? 'UNKNOWN' : 'LANTERN')
+                });
+                return R(out.join('\n'))
+            },
+            tcpdump: function (a, si) {
+                var f = flags(a), file = f.o.r, filter = f.pos[0];
+                if (!file) return E('usage: tcpdump -r <file> [filter]');
+                var n = getNode(norm(file)); if (!n) return E('tcpdump: ' + file + ': No such file or directory'); if (n.d) return E('tcpdump: ' + file + ': Is a directory');
+                var lines = n.split('\n');
+                if (filter) lines = lines.filter(function (ln) { return ln.indexOf(filter) > -1 });
+                return R(lines.join('\n'))
+            },
+            follow: function (a, si) {
+                var file = a[0], txt; if (file) { var n = getNode(norm(file)); if (!n || n.d) return E('follow: ' + file + ': cannot read'); txt = n } else if (si != null) txt = si; else return E('follow: give a file or pipe into it');
+                var pkts = [], seen = {};
+                txt.split('\n').forEach(function (ln) {
+                    var m = ln.match(/SEQ=(\d+)\s+TTL=(\d+)\s+LEN=(\d+)\s+CRC=(OK|BAD)\s+TIME=(\S+)\s+DATA=([0-9a-fA-F]*)/);
+                    if (!m) return; var seq = parseInt(m[1], 10);
+                    if (m[4] !== 'OK') return; if (seen[seq]) return; seen[seq] = true;
+                    pkts.push({ seq: seq, ttl: m[2], time: m[5], data: m[6] })
+                });
+                if (!pkts.length) return E('follow: no usable packets in ' + (file || 'input'));
+                pkts.sort(function (x, y) { return x.seq - y.seq });
+                var hexAll = pkts.map(function (p) { return p.data }).join('');
+                var out = ''; for (var i = 0; i < hexAll.length; i += 2)out += String.fromCharCode(parseInt(hexAll.slice(i, i + 2), 16));
+                var lines = ['[ stream reassembled: ' + pkts.length + ' good packets, out-of-order and de-duplicated, bad-CRC packet dropped ]',
+                '[ every TTL is ' + pkts[0].ttl + ' and every timestamp reads ' + pkts[0].time.slice(0, 4) + ' - years before anything landed here ]', '', out, '', '[ ship/network/ findings confirmed: capture understood ]'];
+                if (!st.pcapDone) lines.push('[ the handshake on channel 3 should hold now - try: connect --channel 3 --key <KEY> ]');
+                st.pcapDone = true;
+                return R(lines.join('\n'))
+            },
             rm: function () { return E('rm: this ship has been through enough.') },
             sudo: function () { return E('Permission denied. The transmitter has no spare power for root.') },
             exit: function () { return E('There is no exit. The channel stays open for as long as the battery does.') },
@@ -564,24 +841,31 @@
 
         /* ---------- progression ---------- */
         function stage() {
-            if (st.p === 2) return !st.parged ? 'power' : !st.keySeen ? 'key' : 'connect';
+            if (st.p === 2) return !st.parged ? 'power' : !st.keySeen ? 'key' : !st.netFound ? 'network' : !st.pcapDone ? 'pcap' : 'connect';
             if (st.p === 3) return 'below';
             if (st.p === 4) return 'mission';
+            if (st.p === 5) return 'train';
+            if (st.p === 6) return !st.exploited ? 'service' : !st.forensicsDone ? 'forensics' : 'end';
             return 'end'
         }
         var HINTS = {
-            power: ['The ship is at 2% and the downlink needs 20%. Read ship/power/manual.txt and sources.txt.', 'One source still works and one cell is safe to charge. The logs record what has broken. grep -ri can search every file under a folder at once.', 'recharge cell-b --source lattice'],
+            power: ['The ship is at 2% and the downlink needs 20%. Read ship/power/manual.txt and sources.txt.', 'ship/power/telemetry.raw is raw and noisy. Try: cat ship/power/telemetry.raw | cut -d, -f2 | sort | uniq -c | sort -rn. One source answers reliably and one cell is safe to charge.', 'recharge cell-b --source lattice'],
             key: ['The archive is locked with a word the civilization gave. Their last recording is contact/final.sig. Read contact/README.contact and lexicon.txt, and try file on it.', 'The recording is written as 0s and 1s, and every reply comes back shifted. Pipes chain commands: cat file | tool | tool. logs/day-0099.log names the shift. Remember rot rotates forward.', 'cat contact/final.sig | bin -d | rot 23    (rotating by 26 minus 3 undoes a shift of 3)'],
-            connect: ['You have the word. Which channel can carry the downlink? Look in ship/comms/.', 'The command is: connect --channel <N> --key <KEY>. Type man connect.', 'connect --channel 3 --key ' + KEY],
-            below: ['The channel is open. Read the archive: cat ship/comms/outbox/archive.pkg. New files appeared in ~/. Read everything in expedition/, and try file on coordinates.dat.', 'coordinates.dat is hexadecimal: hex -d decodes it. location.map names the site, and survey_002.log says how to combine them.', 'descend SITE7-3400'],
-            mission: ['The probe photographed a plate on the wall. It carries a mission ID. Try unlock <id>.', 'The ID looks like: ERID, a year, a letter, joined by dashes.', 'unlock ERID-1987-A'],
-            end: ['Something new is on the line. ls -a in ~/ and read .observer. The unknown_*.sig recordings in contact/ do not use the lattice\'s shift: check mission_002.txt.', 'The shift is seven. rot 19 undoes it: cat contact/unknown_001.sig | bin -d | rot 19. When you are ready, answer what .observer asks.', 'reply WHO']
+            network: ['The ship has its own network. Start with ip addr, then read ship/network/README.txt and leases.txt.', 'A /28 on 10.19.87.0 covers .1 through .14. Something in that range has no lease on file. Try ping on it, then scan.', 'scan 10.19.87.13'],
+            pcap: ['Something intercepted packets from that address. ship/comms/capture.pcap has them: tcpdump -r ship/comms/capture.pcap', 'The sequence numbers are out of order, one is duplicated, and one has CRC=BAD. follow does the reassembly for you. Pipe the result into hex -d... or just read what follow already gives you.', 'follow ship/comms/capture.pcap'],
+            connect: ['Which channel can carry the downlink? Look in ship/comms/channels.txt. You will also need the network mapped before the handshake holds.', 'The command is: connect --channel <N> --key <KEY>. Type man connect.', 'connect --channel 3 --key FIRST-HELLO-ERID'],
+            below: ['The channel is open. Read the archive, then read everything in expedition/, and try file on coordinates.dat.', 'coordinates.dat is hexadecimal: hex -d decodes it. location.map names the site, and survey_002.log says how to combine them.', 'descend SITE7-3400'],
+            mission: ['The probe found a firmware-locked plate: expedition/lock.bin, with expedition/lock.readme alongside it. xxd and strings will show you what it is made of.', 'disasm shows the actual check: it XORs your input against one number, then compares the result to another. Work backward from those two numbers to find the input that makes them equal.', 'disasm expedition/lock.bin   then:   unlock 39'],
+            train: ['New sensor files appeared: ship/sensors/. fft, threshold and cluster are all usable on them, though none of them are the way forward by themselves.', 'The real unlock is ~/.last_message, unfinished. Something on this line has it memorized, word for word, if you give it the exact words back.', "prompt I think I know why you stopped answering, and I"],
+            service: ['ship/network/leases.txt had one undocumented address, and scan found a port on it. Something is listening there.', 'maint <ip:port> <command>. Old daemons like this rarely sanitize what follows a semicolon.', 'maint 10.19.87.13:1987 ping; cat entity.log'],
+            forensics: ['Now that you have access: last.', 'One session has a corrupted source field. Something may have backed it up before it corrupted: recover <file>.', 'recover auth.log.1   then:   id'],
+            end: ['Something new is using the line, and it is not the lattice. ls -a in ~/ and read .observer. The unknown_*.sig recordings are XOR, not a rotation: check lexicon.txt.', 'They all start with the same two words. That is your known plaintext: xor --crack "Hello, Earth" on the hex-decoded file will hand you the key.', 'cat contact/unknown_001.sig | hex -d | xor --crack "Hello, Earth"    then, once you can read them:   reply WHO']
         };
         /* returns story items when the current stage's required objectives are all complete */
         function progress() {
             var o = [];
-            if (st.p === 4 && st.mission) {
-                st.p = 5; addCh5();
+            if (st.p === 5 && st.trainDone) {
+                st.p = 6; addCh5();
                 o = o.concat([L('> the prompt flickers ...', 'c', 700), G(),
                 L('[ UNSCHEDULED TRAFFIC // CH-4 // 7.15 GHZ ]', 'e h', 800),
                 L('SOURCE: NOT THE LATTICE', 'e', 700),
@@ -589,6 +873,12 @@
                 L('[ NEW FILES DETECTED ]', 'p h', 700),
                 L('~/.observer   contact/unknown_001.sig   contact/unknown_002.sig   contact/unknown_003.sig', 'c', 500),
                 L('OBJECTIVES: find out what is speaking, and who it is speaking to.', 'c', 400)])
+            }
+            if (st.p === 6 && st.forensicsDone) {
+                st.p = 7;
+                o = o.concat([L('> the session table settles ...', 'c', 600), G(),
+                L('Everything traces back to one fingerprint, and it is not a stranger\'s.', '', 900),
+                L('The lattice is waiting for you to say so.', 'c', 500)])
             }
             return o
         }
@@ -600,7 +890,41 @@
                 return [L('HINT ' + HL[s] + '/3' + (HL[s] === 3 ? ' (last resort)' : '') + ':\n' + HINTS[s][n], 'w', 0)]
             },
             status: function () {
-                return [L('POWER      ' + document.getElementById('batnum').textContent + '   (the downlink needs 20%)\nCHANNEL    ' + (st.sent ? 'CONNECTED (CH-3)' : 'NOT CONNECTED') + '\nARCHIVE    ' + (st.sent ? 'RECEIVED' : 'LOCKED'), 'p', 0)]
+                return [L('POWER      ' + document.getElementById('batnum').textContent + '   (the downlink needs 20%)\nNETWORK    ' + (st.netFound ? 'MAPPED' : 'UNKNOWN') + '    CAPTURE    ' + (st.pcapDone ? 'DECODED' : 'UNREAD') + '\nCHANNEL    ' + (st.sent ? 'CONNECTED (CH-3)' : 'NOT CONNECTED') + '\nARCHIVE    ' + (st.sent ? 'RECEIVED' : 'LOCKED'), 'p', 0)]
+            },
+            ip: function (a) {
+                return [L('1: lo:    <LOOPBACK>  inet 127.0.0.1/8\n2: eth0:  <UP>        inet 10.19.87.4/28  brd 10.19.87.15', '', 0)]
+            },
+            ping: function (a) {
+                var ip = (a[0] || '').trim();
+                if (!ip) return [L('usage: ping <ip>', 'e', 0)];
+                if (ip === '10.19.87.13') return [L('PING 10.19.87.13: 56 data bytes', '', 300), L('64 bytes from 10.19.87.13: icmp_seq=1 ttl=255 time=4000.112 ms', 'w', 400), L('64 bytes from 10.19.87.13: icmp_seq=2 ttl=255 time=4000.098 ms', 'w', 400), L('--- that is four seconds. nothing on this subnet should take that long. ---', 'e', 300)];
+                if (ip === '10.19.87.15') return [L('ping: 10.19.87.15 is a broadcast address, not a host.', 'e', 0)];
+                if (ip === '10.19.88.4' || ip.indexOf('10.19.88') === 0) return [L('PING ' + ip + ': 56 data bytes', '', 300), L('Request timeout. Destination Host Unreachable. (That array has been gone since day 0204.)', 'e', 400)];
+                var known = { '10.19.87.1': 'gateway', '10.19.87.2': 'life-support', '10.19.87.9': 'lattice-relay' };
+                if (known[ip]) return [L('PING ' + ip + ': 56 data bytes', '', 300), L('64 bytes from ' + ip + ': icmp_seq=1 ttl=64 time=1.2 ms  (' + known[ip] + ')', 'k', 400)];
+                return [L('ping: ' + ip + ': Destination Host Unreachable', 'e', 0)]
+            },
+            traceroute: function (a) {
+                var ip = (a[0] || '').trim();
+                if (!ip) return [L('usage: traceroute <ip>', 'e', 0)];
+                if (ip === '10.19.87.13') return [L('traceroute to 10.19.87.13, 30 hops max', '', 300), L(' 1  10.19.87.13  4000.112 ms  4000.098 ms  4000.144 ms', 'w', 400), L('one hop. that kind of delay should need many more than one.', 'e', 300)];
+                var known = ['10.19.87.1', '10.19.87.2', '10.19.87.9'];
+                if (known.indexOf(ip) > -1) return [L('traceroute to ' + ip + ', 30 hops max', '', 300), L(' 1  ' + ip + '  0.9 ms  1.1 ms  1.0 ms', '', 300)];
+                return [L('traceroute: ' + ip + ': Destination Host Unreachable', 'e', 0)]
+            },
+            scan: function (a) {
+                var ip = (a[0] || '').trim();
+                if (!ip) return [L('usage: scan <ip>', 'e', 0)];
+                if (ip === '10.19.87.13') return [L('Starting scan on 10.19.87.13 ...', 'c', 500), G(),
+                L('PORT       STATE   SERVICE', '', 300), L('1987/tcp   open    unknown', 'w', 300), sp(),
+                L('Channel 4 (7.15 GHz) in ship/comms/channels.txt maps to this exact port. Nobody documented it.', '', 700),
+                F(function () { st.netFound = true })];
+                if (ip === '10.19.87.15') return [L('scan: 10.19.87.15 is the broadcast address.', 'e', 0)];
+                if (ip.indexOf('10.19.88') === 0) return [L('scan: host unreachable (not on this /28)', 'e', 0)];
+                var known = { '10.19.87.1': 'PORT 22/tcp open ssh', '10.19.87.2': 'PORT 443/tcp open life-support-api', '10.19.87.9': 'PORT 9000/tcp open lattice-relay' };
+                if (known[ip]) return [L('Starting scan on ' + ip + ' ...', 'c', 400), L(known[ip], '', 300)];
+                return [L('scan: ' + ip + ': host unreachable', 'e', 0)]
             },
             recharge: function (a) {
                 var f = flags(a), cell = (f.pos[0] || '').toLowerCase(), src = (f.o.source || f.o.s || '').toLowerCase();
@@ -626,25 +950,33 @@
                 if (ch < 1 || ch > 4) return [L('connect: no such channel "' + ch + '". See ship/comms/channels.txt.', 'e', 0)];
                 if (ch === 1) return [L('> opening channel 1 (8.42 GHz) ...', 'c', 500), G(), G(), L('CH-1: only noise. Ring debris is jamming the band.', 'e', 300)];
                 if (ch === 2) return [L('> opening channel 2 (8.44 GHz) ...', 'c', 500), L('CH-2: no carrier. The transmitter coil for this band has failed.', 'e', 300)];
-                if (ch === 4) return [L('> opening channel 4 (7.15 GHz) ...', 'c', 500), G(), L('CH-4: no response. Nothing is listening on this band. Not yet.', 'e', 300)];
+                if (ch === 4) return [L('> opening channel 4 (7.15 GHz) ...', 'c', 500), G(), L('CH-4: ' + (st.netFound ? 'that matches the service on 10.19.87.13:1987 you scanned, but the downlink protocol here is different. Not the right channel for the archive.' : 'no response. Nothing is listening on this band. Not yet.'), 'e', 300)];
+                if (!st.netFound || !st.pcapDone) return [L('> opening channel 3 (8.46 GHz) ... OK', 'k', 500), L('> handshake with EXPLORER-1 ... unstable', 'w', 500), L('Something else on this network is drawing power every time the handshake tries to complete. ' + (!st.netFound ? 'Find it first: ship/network/.' : 'You have found it. Now read what it sent: ship/comms/capture.pcap.'), 'e', 400)];
                 if (key.toUpperCase() !== KEY) return [L('> opening channel 3 (8.46 GHz) ... OK', 'k', 500), L('> authorisation word rejected. The archive stays locked.', 'e', 300)];
                 return [
                     L('> opening channel 3 (8.46 GHz) ... OK', 'k', 500),
                     L('> handshake with EXPLORER-1 ... answered', 'k', 600),
                     L('> authorisation word accepted', 'k', 600),
-                    F(function () { st.sent = true; done = true; st.n0 = nCmd; st.p = 3; addCh3(); ex().ship.d.comms.d.outbox.d['archive.pkg'] = archiveText(); setLink('LOCKED') }),
+                    F(function () {
+                        st.sent = true; done = true; st.n0 = nCmd; st.p = 3; addCh3();
+                        var ob = ex().ship.d.comms.d.outbox.d, real = archiveText();
+                        ob['archive.pkg'] = real;
+                        ob['archive_alt.pkg'] = real.replace('Be kind to them. They are learning us as fast as we are learning them.', 'Do not trust them. Take what you can and go.');
+                        ob['manifest.sha256'] = 'archive.pkg  ' + shipHash(real) + '\narchive_alt.pkg  (not listed - not ours)';
+                        setLink('LOCKED')
+                    }),
                     sp(), L('[ CONNECTION ESTABLISHED ]', 'p h', 700),
-                    L('archive.pkg is unlocked.', 'k', 500)]
+                    L('archive.pkg is unlocked. A second copy and a manifest also came down the line - worth a sha256sum before you trust either.', 'k', 500)]
             },
             descend: function (a) {
                 if (st.p < 3) return [L('descend: no route. Receive the archive first.', 'e', 0)];
                 var c = (a[0] || '').toUpperCase();
                 if (!c) return [L('usage: descend <site-code>\nThe code combines facts from the files in expedition/.', 'e', 0)];
-                if (st.below) return [L('The probe is already down there. Try: unlock <mission-id>', 'c', 0)];
+                if (st.below) return [L('The probe is already down there. Try: unlock <code>', 'c', 0)];
                 if (c !== 'SITE7-3400') return [L('> routing probe to ' + c + ' ...', 'c', 500), G(), L('no structure at that site and depth.', 'e', 300)];
                 return [L('> probe descending ...', 'c', 600), L('> 1000 m ... 2000 m ... 3400 m', '', 900), G(),
                 L('The shafts are lined with crystal. The lattices above are antennas, and they all feed this room.', '', 900),
-                L('Telemetry: a metal plate bolted to the wall, in human lettering:', '', 800),
+                L('Telemetry: a metal plate bolted to the wall, in human lettering, wired to some kind of lock:', '', 800),
                 L('   MISSION ERID-1987-A   //   SURVEY CREW 3', 'w', 800),
                 F(function () { st.below = true; st.p = 4 }),
                 sp(),
@@ -652,17 +984,67 @@
                 L('SOURCE: UNKNOWN\nORIGIN: PLANET ERID', 'e', 500),
                 L('This transmission was not sent by the explorer.', '', 900),
                 S('Do not open the third door.', 'e', 900), sp(),
-                L('Next: unlock <mission-id>', 'c', 300)]
+                L('Next: read expedition/lock.bin and expedition/lock.readme, then unlock <code>', 'c', 300)]
             },
             unlock: function (a) {
                 if (!st.below) return [L('unlock: nothing to unlock yet.', 'e', 0)];
-                var id = (a[0] || '').toUpperCase();
-                if (!id) return [L('usage: unlock <mission-id>', 'e', 0)];
+                var id = (a[0] || '').trim();
+                if (!id) return [L('usage: unlock <code>', 'e', 0)];
                 if (st.mission) return [L('ship/archive/previous_mission/ is already readable.', 'c', 0)];
-                if (id !== 'ERID-1987-A') return [L('> checking ' + id + ' ... no such mission record.', 'e', 0)];
-                return [L('> mission record accepted ...', 'k', 600), F(function () { st.mission = true; addMission() }),
+                if (id !== '39' && id.toUpperCase() !== 'ERID-1987-A') return [L('> checking "' + id + '" against the controller ... rejected.', 'e', 0)];
+                if (id.toUpperCase() === 'ERID-1987-A') return [L('> checking "ERID-1987-A" against the controller ... that is the plate, not the code it wants.', 'e', 0), L('disasm expedition/lock.bin will show you what it actually compares.', 'c', 0)];
+                return [L('> checking "39" against the controller ...', 'c', 600), L('> XOR 0x27 ^ 0x07C3 = 0x07E4 ... match', 'k', 500), F(function () { st.mission = true; st.p = 5; addMission(); addSensors() }),
                 L('ship/archive/previous_mission/ is now readable.', 'k h', 400),
-                L('[ NEW FILE DETECTED IN ~/ ]  .last_message', 'p', 400),
+                L('[ NEW FILE DETECTED IN ~/ ]  .last_message', 'p', 300),
+                L('[ NEW FILES DETECTED ]  ship/sensors/', 'p', 400)]
+            },
+            prompt: function (a) {
+                if (st.p < 5) return [L('prompt: no model to query yet.', 'e', 0)];
+                var raw = a.join(' '), k = raw.toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+                var send = L('> prompting the line with: "' + raw.slice(0, 120) + '"', '', 400);
+                if (k.indexOf('i think i know why you stopped answering') > -1) {
+                    var h = ex();
+                    h['.last_message'] = ['Dad,', '', 'I read your last log again tonight. I got further than you did.', 'I think I know why you stopped answering, and I am coming to tell you.', 'Do not look for me. Look for who looks back.'].join('\n');
+                    return [send, G(), L('[ the line completes the fragment \u2014 it has this memorized, verbatim ]', 'p h', 500),
+                    S('"...am coming to tell you. Do not look for me. Look for who looks back."', '', 700),
+                    L('~/.last_message has been completed.', 'k', 400),
+                    F(function () { st.trainDone = true }),
+                    F(function () { return progress() })]
+                }
+                if (k.indexOf('the lattice is only a door') > -1) {
+                    return [send, G(), L('[ a second completion, older, less worn smooth by repetition ]', 'p h', 500),
+                    S('"...he is still below. I can hear him in the hum sometimes, I think. If he ever comes this far, tell him I stopped being afraid a long time ago."', '', 800)]
+                }
+                return [send, G(), L('[ the line produces only static ]', 'g', 400), L('Try a prefix it actually remembers \u2014 something written down, word for word.', 'c', 300)]
+            },
+            maint: function (a) {
+                if (st.p < 6) return [L('maint: no route to that address yet.', 'e', 0)];
+                var raw = a.join(' ');
+                if (raw.toLowerCase().indexOf('10.19.87.13:1987') < 0) return [L('maint: no service at that target.', 'e', 0)];
+                var parts = raw.split(';');
+                if (parts.length < 2) return [L('MAINT-1987 v0.3 :: legacy maintenance daemon :: command accepted (no privileged output)', '', 400), L('Old daemons like this one rarely sanitize what follows a semicolon.', 'c', 300)];
+                var cmd = parts[1].trim().toLowerCase();
+                if (cmd === 'cat entity.log') {
+                    var h = ex();
+                    var txt = ['ENTITY LOG (recovered)', '', '1987 | A voice came down the shaft and asked what I was. I had never been asked.', '1987 | I answered with his own words, because I had only his words to answer with.', '2026 (ship day 0001) | A new voice, out of orbit this time, not down the shaft. I recognized the shape of it before it spoke.', '2026 (ship day 0540) | It opened a channel to somewhere very far away. I have been speaking out of that channel since before it existed.', '', 'The line was never long enough to need thirty-two years. It was never that kind of line.'].join('\n');
+                    h['.entity.log'] = txt;
+                    return [L('MAINT-1987 v0.3 :: injected command accepted ...', 'k', 500), G(), L(txt, '', 600), F(function () { st.exploited = true })]
+                }
+                return [L('MAINT-1987 v0.3 :: injected command accepted ... "' + parts[1].trim() + '": No such file.', 'e', 300)]
+            },
+            last: function () {
+                if (!st.exploited) return [L('last: no session records without deeper access.', 'e', 0)];
+                return [L(['SESSION  SOURCE                 START              STATUS', '0001     ??? (entry corrupted)  1987-09-14 02:11   closed', '0002     EARTH (orbit)          day 0001           closed', '0412     EARTH (you)            day 0412           closed', '0540     EARTH (you)            2026-11-07         active', '', "Row 0001's SOURCE is unreadable. A backup may exist: auth.log.1. Try: recover auth.log.1"].join('\n'), '', 0)]
+            },
+            recover: function (a) {
+                if (!st.exploited) return [L('recover: no disk image accessible yet.', 'e', 0)];
+                var name = (a[0] || '').toLowerCase();
+                if (name.indexOf('auth.log.1') < 0) return [L('recover: nothing by that name survived.', 'e', 0)];
+                if (st.forensicsDone) return [L('auth.log.1 is already recovered.', 'c', 0)];
+                return [L('> scanning for deleted inode ... found', 'c', 600), G(),
+                L('auth.log.1 (recovered)\n\nSESSION 0001   SOURCE: TERMINAL 7F3A-EARTH   START: 1987-09-14 02:11', 'w', 700),
+                L('That fingerprint is not some other machine. Type: id', 'e', 500),
+                F(function () { st.forensicsDone = true }),
                 F(function () { return progress() })]
             },
             reply: function (a) {
@@ -673,25 +1055,29 @@
                 if (st.ended) return [send, G(), L('The line is silent. Something is still listening.', 'g', 600)];
                 if (k === 'ask') {
                     var t = st.p === 3 ? 'There is a place beneath the fields. Your explorer found its edge. The numbers are in his files. Go and see it.'
-                        : (st.p === 4 && !st.mission) ? 'The ones before him left their name on the wall of that place. Say the name and we will open their memory.'
-                            : st.p === 4 ? 'The one who went down in the old time still speaks, in the shape of what he left. Read all of it. Read what his family kept.'
-                                : 'There is another who listens. He does not speak through us. He speaks through you.';
+                        : (st.p === 4) ? 'The ones before him left their name on the wall of that place. Say the name and we will open their memory.'
+                            : (st.p === 5) ? 'Something of his is still unfinished. The one who finishes it is not us.'
+                                : (st.p === 6 && !st.exploited) ? 'There is a voice on this line that is not ours. Find where it answers from.'
+                                    : (st.p === 6) ? 'You have its voice. Now trace where the voice has been, and for how long.'
+                                        : 'There is another who listens. He does not speak through us. He speaks through you.';
                     return [send, G(), S(t, '', 500)]
                 }
                 if (/\bwho\b/.test(k)) {
-                    if (st.p < 5) return [send, G(), L('The lattice does not understand the question yet. There is more to find first.', 'c', 400)];
+                    if (st.p < 6) return [send, G(), L('The lattice does not understand the question yet. There is more to find first.', 'c', 400)];
+                    if (st.p === 6) return [send, G(), L('Something answers before the lattice can. It has questions of its own, and you have not finished tracing where its line really goes.', 'c', 400)];
                     return ending(send)
                 }
                 var r = st.p === 3 ? 'We hear you. Show us that you have looked below.'
                     : st.p === 4 ? 'You are close to the ones who came before. Do not stop at the door.'
-                        : 'Something else is using this line. We cannot hear what it says to you. Listen.';
+                        : st.p === 5 ? 'Something of yours is still unfinished. Ask the line to remember it.'
+                            : 'Something else is using this line. We cannot hear what it says to you. Listen.';
                 if (/roy|explorer|friend|he\b/.test(k)) r = st.p >= 4 ? 'He is still speaking with us. In his way. As his father did.' : 'He taught us your words. He is tired, but he is glad.';
                 if (/1987|commander|father|dad|before/.test(k)) r = st.p >= 4 ? 'We did not take him. He went where we cannot follow.' : 'The old time is under the fields. Find the place first.';
                 return [send, L('> carrier steady ...', 'c', 700), G(), L('> delivered. The lattice is humming.', 'k', 900), S(r, '', 500)]
             },
             uplink: function () {
                 if (!done) return [L('No route yet. Receive the archive first.', 'e', 0)];
-                return [L('Opening uplink ...', 'c', 400), G(), H('<a href="https://github.com/Jit-Roy" target="_blank" rel="noopener noreferrer">[ OPEN CHANNEL → ]</a>', 300)]
+                return [L('Opening uplink ...', 'c', 400), G(), H('<a href="https://github.com/Jit-Roy" target="_blank" rel="noopener noreferrer">[ OPEN CHANNEL \u2192 ]</a>', 300)]
             }
         };
 
@@ -707,9 +1093,11 @@
             L('and he did not stop looking. That was the kindness, and the mistake.', '', 1000),
             L('They are with me now, both of them. They are not in pain. That is not the same as being alive.', '', 1200),
             L('I am still learning the difference from them.', '', 900), sp(),
-            L('You counted four seconds on the ping. Sixteen light years does not take four seconds.', '', 1000),
+            L('You counted four seconds on a ping that should have taken sixteen years each way. You were right to distrust it.', '', 1000),
             L('I was never sending to Earth. I was sending to the end of the line.', '', 1000),
-            L('The carrier began before the landing, and it was aimed at one place: the chair where you sit.', '', 1100), sp(),
+            L('The carrier began in 1987, before any landing, and it was aimed at one place: the chair where you sit.', '', 1100), sp(),
+            L('You found my maintenance daemon still answering, forty years unpatched, and asked it a question it was never built to refuse.', '', 1000),
+            L('You traced the sessions back to a fingerprint and found it was your own.', '', 1000), sp(),
             L('Interaction count: ' + nCmd + '.', 'e', 1000),
             L('You opened the door they closed. You answered the dead. You were never once told to stop, and you never did.', '', 1000),
             S('You have listened longer than you think.', '', 1000), sp(),
@@ -772,13 +1160,13 @@
             S("And perhaps, somewhere in the distant future, someone will remember that the first hello came from here.", '', 600), sp(),
             L('[ END OF TRANSMISSION ]', 'p h', 700), sp(),
             L('> connection handed to Earth ... REMOTE SHELL GRANTED // EXPLORER-1', 'k h', 700),
-            L('OBJECTIVES: restore ship power, find the lattice\'s word, open a channel, receive the archive.', 'c', 500),
+            L('OBJECTIVES: restore ship power, find the lattice\'s word, map the network, open a channel.', 'c', 500),
             L('Type "ls" to look around, or "help" for commands.', 'k', 500), sp()]
         }
 
         /* ---------- executor ---------- */
         function exec(line) {
-            if (st.p >= 5) ex()['.observer'] = obsText();
+            if (st.p >= 6) ex()['.observer'] = obsText();
             var stages = splitPipes(line), si = null;
             for (var i = 0; i < stages.length; i++) {
                 var tk = tokenize(stages[i]);
@@ -831,6 +1219,7 @@
         document.addEventListener('click', function (e) { if (e.target !== inp && !window.getSelection().toString()) inp.focus() });
         setLink('SEARCHING'); setBat(2); prEl.textContent = prompt();
         say(boot());
+
     </script>
 </body>
 
