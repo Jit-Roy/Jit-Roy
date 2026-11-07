@@ -246,9 +246,14 @@
         var out = document.getElementById('out'), inp = document.getElementById('in'), prEl = document.getElementById('pr');
         var hist = [], hi = 0, Q = [], running = false, fast = false, done = false, nCmd = 0, nHints = 0;
         var RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        function newSt() { return { explored: false, charged: false, keySeen: false, sent: false, bat: 2, below: false, mission: false, packet: false, ended: false, n0: 0 } }
-        function newHL() { return { explore: 0, power: 0, key: 0, connect: 0, below: 0, mission: 0, end: 0 } }
+
+        /* ---------- progression state ----------
+           st.p is the story stage (2-5), never shown to the player. Stages advance only when the player
+           performs an action (connect, descend, unlock). Reading files is never required. */
+        function newSt() { return { p: 2, charged: false, keySeen: false, sent: false, bat: 2, below: false, mission: false, ended: false, n0: 0 } }
+        function newHL() { return { power: 0, key: 0, connect: 0, below: 0, mission: 0, end: 0 } }
         var st = newSt(), HL = newHL();
+
         var GC = '▒░#%/\\|:;*?&@';
         function rc() { return GC[Math.floor(Math.random() * GC.length)] }
         function corrupt(t, all) { var s = ''; for (var j = 0; j < t.length; j++) { var c = t[j]; s += (c === ' ' || c === '\n') ? c : ((all || Math.random() < 0.45) ? rc() : c) } return s }
@@ -323,16 +328,13 @@
                         'day-0540.log': ["DAY 0540 | Archive queued in ship/comms/. Locked with the word they gave me.", "DAY 0540 | Channel check: not every channel is usable. See ship/comms/channels.txt.", "DAY 0540 | Earth is about sixteen light years away. A test ping should take thirty-two years round trip.", "DAY 0540 | It took four seconds. I do not think the transmitter is doing that. I have stopped asking.", "DAY 0540 | If someone is reading this, thank you for being here."].join('\n')
                     }),
                     contact: D({
-                        'README.contact': ["CONTACT RECORDINGS // EXPLORER-1", "", "These are the pulses I recorded at the lattice. Five recordings, in order.", "final.sig is the last and the longest. It came the night before the", "transmitter began to fail.", "", "Three more recordings, unknown_*, I could not place at all.", "", "I have not decoded any of them to my satisfaction.", "My notes are in lexicon.txt."].join('\n'),
-                        'lexicon.txt': ["LEXICON (incomplete)", "", "Pulse format: long = 1, short = 0. Eight pulses make one character.", "Every recording is written out as 0s and 1s.", "", "Every reply comes back with its letters shifted. The shift is always the same.", "See logs for how much.", "", "unknown_*.sig: Could not decode these. Never found the right one."].join('\n'),
+                        'README.contact': ["CONTACT RECORDINGS // EXPLORER-1", "", "These are the pulses I recorded at the lattice. Five recordings, in order.", "final.sig is the last and the longest. It came the night before the", "transmitter began to fail.", "", "I have not decoded any of them to my satisfaction.", "My notes are in lexicon.txt."].join('\n'),
+                        'lexicon.txt': ["LEXICON (incomplete)", "", "Pulse format: long = 1, short = 0. Eight pulses make one character.", "Every recording is written out as 0s and 1s.", "", "Every reply comes back with its letters shifted. The shift is always the same.", "See logs for how much."].join('\n'),
                         'pulse_001.sig': pulse('hello'),
                         'pulse_002.sig': pulse('who are you'),
                         'pulse_003.sig': pulse('you are far from home'),
                         'pulse_004.sig': pulse('we are listening'),
-                        'final.sig': pulse(FINAL),
-                        'unknown_001.sig': toBin(rotF('do not follow the warm light down. it was here before the lattice', 7)),
-                        'unknown_002.sig': toBin(rotF('you came back. you stayed. where is the rest of you', 7)),
-                        'unknown_003.sig': toBin(rotF('we know the one who sits at the far end of the line. you have listened longer than you think', 7))
+                        'final.sig': pulse(FINAL)
                     }),
                     ship: D({
                         power: D({
@@ -352,9 +354,20 @@
             })
         });
 
-        /* ---------- chapters 3-7: content unlocked after the archive ---------- */
+        /* ---------- content unlocked as the story advances ---------- */
+        function ex() { return FS.d.home.d.explorer.d }
+        function obsText() { return ['OBSERVER RECORD // UNKNOWN', '', 'Earth terminal accessed.', 'Remote user detected.', 'Interaction count: ' + nCmd + '.', '', 'Subject identification: UNKNOWN.', '', 'You are not the first.', '', 'If you wish to be seen, say so: reply WHO'].join('\n') }
+        function archiveText() {
+            return ['ARCHIVE.PKG', '3 messages received.', 'UNLOCKED.', '',
+                'MESSAGE 1 // FROM THE EXPLORER', 'If you are reading this, you did what I could not:', 'you listened to the end.', 'I do not know what you will do with what I found.', 'Be kind to them. They are learning us as fast as we are learning them.', '',
+                'MESSAGE 2 // FROM THE LATTICE (translated, badly)', 'We have been waiting for a second voice.', 'You are very far away. So are we.', 'Tell your world: we are here, and we are glad.', '',
+                'MESSAGE 3 // FROM THE EXPLORER, LAST', 'I was never sure my first hello would cross the dark.', 'It did, and now you have answered.', 'Two worlds, one pulse each. That is enough to begin.', 'Thank you, Earth. Keep listening.', '',
+                '[ END OF ARCHIVE ]', '', '[ NEW FILES DETECTED IN ~/ ]', 'expedition/   .coordinates', '',
+                'MESSAGE 4 // FROM THE LATTICE', 'Under the fields, something is warm. It was warm before us.', 'Your explorer measured how far down. We cannot say the number.', 'Read what he kept. Then go and look.', '',
+                'You may answer in your own words:  reply <message>', 'Or ask for a clue:  reply ASK'].join('\n')
+        }
         function addCh3() {
-            var h = FS.d.home.d.explorer.d;
+            var h = ex();
             h.expedition = D({
                 'coordinates.dat': toHex('DEPTH 3400 M\nLAT -21.40 LON 118.07\nsite name: see location.map'),
                 'survey_001.log': ['DAY 0007 | Detected a carrier from underground. It was already transmitting.', 'DAY 0007 | Timestamps say it began long before my landing. Direction of the beam: Earth.'].join('\n'),
@@ -362,22 +375,30 @@
                 'anomaly.log': ['DAY 0388 | When I stop talking, something keeps tapping back. It is not the lanterns.', 'DAY 0388 | Something beneath the surface has been answering me. I never told the lattice where I sleep.'].join('\n'),
                 'location.map': ['      ~  ~  ~  lattice fields  ~  ~  ~', '   [SITE3]       [SITE5]       [SITE9]', '                   |', '            [SITE7]  <- the humming one', '                   |', '      (nothing else is marked)'].join('\n')
             });
-            h['.last_message'] = ['Dad,', '', 'I read your last log again tonight. I got further than you did.', 'I think I know why you stopped answering, and I'].join('\n');
-            h['.coordinates'] = 'Not Erid. A place on Earth. I kept the numbers in case anyone asked where home was.';
-            h['.observer'] = ['OBSERVER RECORD // UNKNOWN', '', 'Earth terminal accessed.', 'Remote user detected.', 'Interaction count: ' + nCmd + '.', '', 'Subject identification: UNKNOWN.', '', 'You are not the first.', '', 'If you wish to be seen, say so: reply WHO'].join('\n')
+            h['.coordinates'] = 'Not Erid. A place on Earth. I kept the numbers in case anyone asked where home was.'
         }
         function addMission() {
-            FS.d.home.d.explorer.d.ship.d.archive = D({
+            var h = ex();
+            h.ship.d.archive = D({
                 previous_mission: D({
                     'mission_001.txt': 'MISSION ERID-1987-A. Crew of three. Purpose: investigate a periodic signal from 40 Eridani. Landing site: the lattice fields.',
-                    'mission_002.txt': ['Day 12: the lattice replied.', 'Day 31: the Commander says it called him by name.', 'Day 40: the Commander descends to the structure. I stay with the lander.'].join('\n'),
+                    'mission_002.txt': ['Day 12: the lattice replied.', 'Day 31: the Commander says it called him by name.', 'Day 33: the structure below does not use the lattice\'s shift of three. Its letters are shifted seven.', 'Day 40: the Commander descends to the structure. I stay with the lander.'].join('\n'),
                     'crew_manifest.dat': ['CMDR  A. ROY   (next of kin: son, age 6)', 'ENG   T. VASQUEZ', 'MED   K. ODUYA'].join('\n'),
                     'transmission.log': ['1987 | Last burst received on Earth. No reply was ever sent.', '1987 | Pulse pattern identical to the one the lattice used on Roy.'].join('\n'),
                     'final_recording.sig': pulse('the lattice is only a door. he is still below. tell my son to stop looking for me')
                 })
-            })
+            });
+            h['.last_message'] = ['Dad,', '', 'I read your last log again tonight. I got further than you did.', 'I think I know why you stopped answering, and I'].join('\n')
         }
-        function rmCh3() { var h = FS.d.home.d.explorer.d; ['expedition', '.last_message', '.coordinates', '.observer'].forEach(function (k) { delete h[k] }); delete h.ship.d.archive }
+        function addCh5() {
+            var h = ex(), c = h.contact.d;
+            h['.observer'] = obsText();
+            c['README.contact'] += '\n\nThree more recordings, unknown_*, appeared after the archive arrived.\nI could not place them.';
+            c['lexicon.txt'] += '\n\nunknown_*.sig: not the lattice\'s shift. Whoever speaks here counts differently.';
+            c['unknown_001.sig'] = toBin(rotF('do not follow the warm light down. it was here before the lattice', 7));
+            c['unknown_002.sig'] = toBin(rotF('you came back. you stayed. where is the rest of you', 7));
+            c['unknown_003.sig'] = toBin(rotF('we know the one who sits at the far end of the line. you have listened longer than you think', 7))
+        }
 
         var cwd = ['home', 'explorer'];
         function getNode(segs) { var n = FS; for (var i = 0; i < segs.length; i++) { if (!n || !n.d || !(segs[i] in n.d)) return null; n = n.d[segs[i]] } return n }
@@ -422,9 +443,9 @@
             return { e: cmd + ': give a file or pipe into it' }
         }
         var cmds = {
-            help: function () { return R("Files and navigation\n  ls [-a] [-l] [path]    list a folder (-a shows hidden files)\n  cd <path>   pwd   tree [path]   find [path] -name <glob>\n  cat <file...>   head/tail [-n N] <file>   file <path>\n\nSearching and processing (pipes work: cmd | cmd | cmd)\n  grep [-i] [-n] [-r] <pattern> [paths]    wc [-l] [file]\n  bin -d [file]    hex -d [file]    base64 -d [file]    rot <n> [file]    echo <text>\n\nShip systems\n  status   recharge   connect   reply   uplink   descend   unlock      (see: man <command>)\n\nOther\n  man <cmd>  hint  history  skip  replay  clear") },
+            help: function () { return R("Files and navigation\n  ls [-a] [-l] [path]    list a folder (-a shows hidden files)\n  cd <path>   pwd   tree [path]   find [path] -name <glob>\n  cat <file...>   head/tail [-n N] <file>   file <path>\n\nSearching and processing (pipes work: cmd | cmd | cmd)\n  grep [-i] [-n] [-r] <pattern> [paths]    wc [-l] [file]\n  bin -d [file]    hex -d [file]    base64 -d [file]    rot <n> [file]    echo <text>\n\nShip systems\n  status   recharge   connect   reply   uplink   descend   unlock      (see: man <command>)\n\nOther\n  man <cmd>  hint  history  skip  clear") },
             man: function (a) {
-                var m = { ls: 'ls [-a] [-l] [path]  list files. -a includes hidden (dot) files.', cat: 'cat <file...>  print files. With no file, prints what was piped in.', cd: 'cd <path>  change folder. cd with no argument goes home. cd .. goes up.', grep: 'grep [-i] [-n] [-r] <pattern> [paths]  print matching lines. -r searches folders recursively, -i ignores case.', find: 'find [path] -name <glob> [-type f|d]  list matching paths.', bin: 'bin -d [file]  decode 0s and 1s (8 bits per character) into text. Without -d it encodes.', base64: 'base64 -d [file]  decode base64 text. Without -d it encodes.', rot: 'rot <n> [file]  rotate every letter FORWARD by n places (wraps after z).', head: 'head [-n N] <file>  first N lines (default 10).', tail: 'tail [-n N] <file>  last N lines (default 10).', wc: 'wc [-l] [file]  count lines, words and characters.', file: 'file <path>  guess what kind of file this is.', tree: 'tree [path]  show a folder as a tree.', recharge: 'recharge <cell> --source <source>  charge a power cell from a source. See ship/power/.', connect: 'connect --channel <N> --key <KEY>  open a downlink channel and receive the queued archive. Needs 20% power, a channel that can carry the signal, and the right key.', reply: 'reply <message>  send a message back to the lattice. Works once the archive is received.', uplink: 'uplink  open a route back to the sender. Works once the archive is received.', hint: 'hint  get a nudge for the current step (3 per step).', status: 'status  power, channel and archive summary.', hex: 'hex -d [file]  decode hexadecimal digit pairs into text.', descend: 'descend <site-code>  send a probe below the surface. The code is built from the files in expedition/.', unlock: 'unlock <mission-id>  open a locked mission record.' };
+                var m = { ls: 'ls [-a] [-l] [path]  list files. -a includes hidden (dot) files.', cat: 'cat <file...>  print files. With no file, prints what was piped in.', cd: 'cd <path>  change folder. cd with no argument goes home. cd .. goes up.', grep: 'grep [-i] [-n] [-r] <pattern> [paths]  print matching lines. -r searches folders recursively, -i ignores case.', find: 'find [path] -name <glob> [-type f|d]  list matching paths.', bin: 'bin -d [file]  decode 0s and 1s (8 bits per character) into text. Without -d it encodes.', base64: 'base64 -d [file]  decode base64 text. Without -d it encodes.', rot: 'rot <n> [file]  rotate every letter FORWARD by n places (wraps after z).', head: 'head [-n N] <file>  first N lines (default 10).', tail: 'tail [-n N] <file>  last N lines (default 10).', wc: 'wc [-l] [file]  count lines, words and characters.', file: 'file <path>  guess what kind of file this is.', tree: 'tree [path]  show a folder as a tree.', recharge: 'recharge <cell> --source <source>  charge a power cell from a source. See ship/power/.', connect: 'connect --channel <N> --key <KEY>  open a downlink channel and receive the queued archive. Needs 20% power, a channel that can carry the signal, and the right key.', reply: 'reply <message>  send a message back to the lattice, in your own words. Works once the archive is received. The lattice answers according to what you have uncovered.', uplink: 'uplink  open a route back to the sender. Works once the archive is received.', hint: 'hint  get a nudge for the current step (3 per step).', status: 'status  power, channel and archive summary.', hex: 'hex -d [file]  decode hexadecimal digit pairs into text.', descend: 'descend <site-code>  send a probe below the surface. The code is built from the files in expedition/.', unlock: 'unlock <mission-id>  open a locked mission record.' };
                 if (!a[0]) return E('man: which command? Try: man grep'); return m[a[0]] ? R(m[a[0]]) : E('No manual entry for ' + a[0])
             },
             pwd: function () { return R('/' + cwd.join('/')) },
@@ -460,7 +481,7 @@
                 var files = expandAll(a);
                 if (!files.length) return si != null ? R(si) : E('cat: give a file or pipe into it');
                 var o = [];
-                files.forEach(function (f) { var n = getNode(norm(f)); if (!n) o.push('cat: ' + f + ': No such file or directory'); else if (n.d) o.push('cat: ' + f + ': Is a directory'); else { o.push(n); if (norm(f).join('/') === 'home/explorer/README.txt') st.explored = true } });
+                files.forEach(function (f) { var n = getNode(norm(f)); if (!n) o.push('cat: ' + f + ': No such file or directory'); else if (n.d) o.push('cat: ' + f + ': Is a directory'); else o.push(n) });
                 return R(o.join('\n'))
             },
             head: function (a, si) { return linesCmd('head', a, si, false) },
@@ -541,17 +562,36 @@
             matrix: function () { return R(corrupt('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 1) + '\n' + corrupt('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 1) + '\nThe lattice hums. It has noticed you.') }
         };
 
-        /* ---------- ship commands ---------- */
-        function stage() { if (st.sent) return !st.below ? 'below' : !st.mission ? 'mission' : 'end'; if (!st.explored) return 'explore'; if (!st.charged) return 'power'; if (!st.keySeen) return 'key'; return 'connect' }
+        /* ---------- progression ---------- */
+        function stage() {
+            if (st.p === 2) return !st.parged ? 'power' : !st.keySeen ? 'key' : 'connect';
+            if (st.p === 3) return 'below';
+            if (st.p === 4) return 'mission';
+            return 'end'
+        }
         var HINTS = {
-            explore: ['Start with ls to see what is here, then read README.txt with cat.', 'tree shows the whole ship at once. cd moves between folders and cat reads files. The journal and the logs are worth reading.', 'Nothing is hidden behind a puzzle. Read README.txt first.'],
-            power: ['The ship is at 2% and the downlink needs 20%. Read ship/power/manual.txt and status.txt.', 'One source still works and one cell is safe to charge. The logs record what has broken. grep -ri can search every file under a folder at once.', 'recharge cell-b --source lattice'],
+            power: ['The ship is at 2% and the downlink needs 20%. Read ship/power/manual.txt and sources.txt.', 'One source still works and one cell is safe to charge. The logs record what has broken. grep -ri can search every file under a folder at once.', 'recharge cell-b --source lattice'],
             key: ['The archive is locked with a word the civilization gave. Their last recording is contact/final.sig. Read contact/README.contact and lexicon.txt, and try file on it.', 'The recording is written as 0s and 1s, and every reply comes back shifted. Pipes chain commands: cat file | tool | tool. logs/day-0099.log names the shift. Remember rot rotates forward.', 'cat contact/final.sig | bin -d | rot 23    (rotating by 26 minus 3 undoes a shift of 3)'],
             connect: ['You have the word. Which channel can carry the downlink? Look in ship/comms/.', 'The command is: connect --channel <N> --key <KEY>. Type man connect.', 'connect --channel 3 --key ' + KEY],
-            below: ['New files appeared in ~/. Read everything in expedition/, and try file on coordinates.dat.', 'coordinates.dat is hexadecimal: hex -d decodes it. location.map names the site, and survey_002.log says how to combine them.', 'descend SITE7-3400'],
+            below: ['The channel is open. Read the archive: cat ship/comms/outbox/archive.pkg. New files appeared in ~/. Read everything in expedition/, and try file on coordinates.dat.', 'coordinates.dat is hexadecimal: hex -d decodes it. location.map names the site, and survey_002.log says how to combine them.', 'descend SITE7-3400'],
             mission: ['The probe photographed a plate on the wall. It carries a mission ID. Try unlock <id>.', 'The ID looks like: ERID, a year, a letter, joined by dashes.', 'unlock ERID-1987-A'],
-            end: ['Read everything in ship/archive/previous_mission/, then ls -a in ~/ again.', 'cat .observer, and read its last line carefully. reply ASK also changes as you progress.', 'reply WHO']
+            end: ['Something new is on the line. ls -a in ~/ and read .observer. The unknown_*.sig recordings in contact/ do not use the lattice\'s shift: check mission_002.txt.', 'The shift is seven. rot 19 undoes it: cat contact/unknown_001.sig | bin -d | rot 19. When you are ready, answer what .observer asks.', 'reply WHO']
         };
+        /* returns story items when the current stage's required objectives are all complete */
+        function progress() {
+            var o = [];
+            if (st.p === 4 && st.mission) {
+                st.p = 5; addCh5();
+                o = o.concat([L('> the prompt flickers ...', 'c', 700), G(),
+                L('[ UNSCHEDULED TRAFFIC // CH-4 // 7.15 GHZ ]', 'e h', 800),
+                L('SOURCE: NOT THE LATTICE', 'e', 700),
+                S('Someone has been using this terminal. It was not only the explorer, and not only you.', '', 600), sp(),
+                L('[ NEW FILES DETECTED ]', 'p h', 700),
+                L('~/.observer   contact/unknown_001.sig   contact/unknown_002.sig   contact/unknown_003.sig', 'c', 500),
+                L('OBJECTIVES: find out what is speaking, and who it is speaking to.', 'c', 400)])
+            }
+            return o
+        }
         var sc = {
             hint: function () {
                 var s = stage(), n = HL[s];
@@ -569,12 +609,12 @@
                 if (['reactor', 'solar', 'lattice'].indexOf(src) < 0) return [L('recharge: unknown source "' + src + '".', 'e', 0)];
                 if (cell === 'cell-a') return [L('> checking cell-a ... casing cracked.\nCharging would rupture it. Aborted.', 'e', 0)];
                 if (cell === 'cell-c') return [L('> checking cell-c ... wired to life support.\nDisconnecting it would be fatal. Aborted.', 'e', 0)];
-                if (st.charged) return [L('cell-b is already charged to ' + st.bat + '%.', 'c', 0)];
+                if (st.parged) return [L('cell-b is already charged to ' + st.bat + '%.', 'c', 0)];
                 if (src === 'reactor') return [L('> coupling to reactor ...', 'c', 400), G(), L('SPARKS. Reactor coupling cracked: surge detected. Aborted.', 'e', 300)];
                 if (src === 'solar') return [L('> searching for solar array ...', 'c', 500), L('no response. The array is not there.', 'e', 300)];
                 var a2 = [L('> opening resonant tap ... OK', 'k', 500), L('> the lattice hums back ... slow, but it holds', '', 700), F(function () { setLink('UNSTABLE') })];
                 for (var i = 1; i <= 5; i++) { (function (i) { var bar = '#'.repeat(i * 2) + '.'.repeat(10 - i * 2); a2.push(L('> cell-b  [' + bar + ']  ' + (2 + i * 9) + '%', '', 550)); a2.push(F(function () { setBat(2 + i * 9) })) })(i) }
-                a2.push(F(function () { st.charged = true; setLink('LOCKED') }));
+                a2.push(F(function () { st.parged = true; setLink('LOCKED') }));
                 a2.push(L('cell-b charged. The downlink can hold now.', 'k h', 300));
                 return a2
             },
@@ -586,58 +626,28 @@
                 if (ch < 1 || ch > 4) return [L('connect: no such channel "' + ch + '". See ship/comms/channels.txt.', 'e', 0)];
                 if (ch === 1) return [L('> opening channel 1 (8.42 GHz) ...', 'c', 500), G(), G(), L('CH-1: only noise. Ring debris is jamming the band.', 'e', 300)];
                 if (ch === 2) return [L('> opening channel 2 (8.44 GHz) ...', 'c', 500), L('CH-2: no carrier. The transmitter coil for this band has failed.', 'e', 300)];
-                if (ch === 4) return [L('> opening channel 4 (7.15 GHz) ...', 'c', 500), G(), L('CH-4: no response. Nothing is listening on this band.', 'e', 300)];
+                if (ch === 4) return [L('> opening channel 4 (7.15 GHz) ...', 'c', 500), G(), L('CH-4: no response. Nothing is listening on this band. Not yet.', 'e', 300)];
                 if (key.toUpperCase() !== KEY) return [L('> opening channel 3 (8.46 GHz) ... OK', 'k', 500), L('> authorisation word rejected. The archive stays locked.', 'e', 300)];
                 return [
                     L('> opening channel 3 (8.46 GHz) ... OK', 'k', 500),
                     L('> handshake with EXPLORER-1 ... answered', 'k', 600),
                     L('> authorisation word accepted', 'k', 600),
-                    L('> unlocking archive.pkg', '', 600),
-                    L('> receiving  [####......]  40%', '', 600), G(), G(),
-                    F(function () { setLink('LOST') }),
-                    L('[ LINK LOST ]', 'e h', 500),
-                    L('> retry 1/3 ... FAILED', 'w', 900), G(),
-                    L('> retry 2/3 ... FAILED', 'w', 900), G(),
-                    L('> retry 3/3 ... handshake ACK', 'k', 1000),
-                    F(function () { setLink('LOCKED') }),
-                    L('> receiving  [##########]  100%', 'k', 700), sp(),
-                    L('[ ARCHIVE RECEIVED // 3 MESSAGES ]', 'p h', 700), sp(),
-                    L('MESSAGE 1 // FROM THE EXPLORER', 'w', 800),
-                    L('If you are reading this, you did what I could not:', '', 800),
-                    L('you listened to the end.', '', 800),
-                    L('I do not know what you will do with what I found.', '', 800),
-                    L('Be kind to them. They are learning us as fast as we are learning them.', '', 900), sp(),
-                    L('MESSAGE 2 // FROM THE LATTICE (translated, badly)', 'w', 900),
-                    S('We have been waiting for a second voice.', '', 600),
-                    L('You are very far away. So are we.', '', 800),
-                    L('Tell your world: we are here, and we are glad.', '', 900), sp(),
-                    L('MESSAGE 3 // FROM THE EXPLORER, LAST', 'w', 900),
-                    L('I was never sure my first hello would cross the dark.', '', 900),
-                    L('It did, and now you have answered.', '', 800),
-                    L('Two worlds, one pulse each. That is enough to begin.', '', 800),
-                    S('Thank you, Earth. Keep listening.', '', 700), sp(),
-                    L('[ END OF ARCHIVE ]', 'g', 700),
-                    L('LOG: ' + nCmd + ' commands, ' + nHints + ' hint' + (nHints === 1 ? '' : 's') + (nHints === 0 ? '  -  unaided' : ''), 'c', 400),
-                    F(function () { st.sent = true; done = true; st.n0 = nCmd; addCh3() }), sp(),
-                    L('[ NEW FILES DETECTED IN ~/ ]', 'p h', 700),
-                    L('expedition/   .last_message   .coordinates   .observer', 'c', 500), sp(),
-                    L('MESSAGE 4 // FROM THE LATTICE', 'w', 900),
-                    S('We have shared our memories with you.', '', 600),
-                    S('Will you share yours with us?', '', 600), sp(),
-                    L('Answer with:  reply ACCEPT  |  reply DECLINE  |  reply ASK', 'c', 500),
-                    L('There is no rush. Keep looking.', 'g', 400)]
+                    F(function () { st.sent = true; done = true; st.n0 = nCmd; st.p = 3; addCh3(); ex().ship.d.comms.d.outbox.d['archive.pkg'] = archiveText(); setLink('LOCKED') }),
+                    sp(), L('[ CONNECTION ESTABLISHED ]', 'p h', 700),
+                    L('archive.pkg is unlocked.', 'k', 500)]
             },
             descend: function (a) {
-                if (!done) return [L('descend: no route. Receive the archive first.', 'e', 0)];
+                if (st.p < 3) return [L('descend: no route. Receive the archive first.', 'e', 0)];
                 var c = (a[0] || '').toUpperCase();
                 if (!c) return [L('usage: descend <site-code>\nThe code combines facts from the files in expedition/.', 'e', 0)];
-                if (c !== 'SITE7-3400') return [L('> routing probe to ' + c + ' ...', 'c', 500), G(), L('no structure at that site and depth.', 'e', 300)];
                 if (st.below) return [L('The probe is already down there. Try: unlock <mission-id>', 'c', 0)];
+                if (c !== 'SITE7-3400') return [L('> routing probe to ' + c + ' ...', 'c', 500), G(), L('no structure at that site and depth.', 'e', 300)];
                 return [L('> probe descending ...', 'c', 600), L('> 1000 m ... 2000 m ... 3400 m', '', 900), G(),
                 L('The shafts are lined with crystal. The lattices above are antennas, and they all feed this room.', '', 900),
                 L('Telemetry: a metal plate bolted to the wall, in human lettering:', '', 800),
                 L('   MISSION ERID-1987-A   //   SURVEY CREW 3', 'w', 800),
-                F(function () { st.below = true; st.packet = true }), sp(),
+                F(function () { st.below = true; st.p = 4 }),
+                sp(),
                 L('[ INCOMING PACKET ]', 'e h', 700),
                 L('SOURCE: UNKNOWN\nORIGIN: PLANET ERID', 'e', 500),
                 L('This transmission was not sent by the explorer.', '', 900),
@@ -650,45 +660,68 @@
                 if (!id) return [L('usage: unlock <mission-id>', 'e', 0)];
                 if (st.mission) return [L('ship/archive/previous_mission/ is already readable.', 'c', 0)];
                 if (id !== 'ERID-1987-A') return [L('> checking ' + id + ' ... no such mission record.', 'e', 0)];
-                return [L('> mission record accepted ...', 'k', 600), F(function () { st.mission = true; addMission() }), L('ship/archive/previous_mission/ is now readable.', 'k h', 400)]
+                return [L('> mission record accepted ...', 'k', 600), F(function () { st.mission = true; addMission() }),
+                L('ship/archive/previous_mission/ is now readable.', 'k h', 400),
+                L('[ NEW FILE DETECTED IN ~/ ]  .last_message', 'p', 400),
+                F(function () { return progress() })]
             },
             reply: function (a) {
                 if (!done) return [L('No open channel yet. Receive the archive first.', 'e', 0)];
                 var msg = a.join(' ').trim();
                 if (!msg) return [L('usage: reply <message>', 'e', 0)];
-                if (st.ended) return [L('The channel is closed. Type replay to begin again.', 'c', 0)];
                 var k = msg.toLowerCase().replace(/[^a-z ]/g, '').trim(), send = L('> sending: "' + msg.slice(0, 160) + '"', '', 500);
+                if (st.ended) return [send, G(), L('The line is silent. Something is still listening.', 'g', 600)];
                 if (k === 'ask') {
-                    var t = !st.below ? 'There is a place beneath the fields. Your explorer found its edge. The numbers are in his files. Go and see it.'
-                        : !st.mission ? 'The ones before him left their name on the wall of that place. Say the name and we will open their memory.'
-                            : 'There is another who listens. He does not speak through us. He speaks through you.';
+                    var t = st.p === 3 ? 'There is a place beneath the fields. Your explorer found its edge. The numbers are in his files. Go and see it.'
+                        : (st.p === 4 && !st.mission) ? 'The ones before him left their name on the wall of that place. Say the name and we will open their memory.'
+                            : st.p === 4 ? 'The one who went down in the old time still speaks, in the shape of what he left. Read all of it. Read what his family kept.'
+                                : 'There is another who listens. He does not speak through us. He speaks through you.';
                     return [send, G(), S(t, '', 500)]
                 }
-                if (k === 'decline') return [send, L('> carrier fading ...', 'c', 800), G(), F(function () { st.ended = true; setLink('LOST') }),
-                    L('[ ENDING 2 // THE SILENT WORLD ]', 'p h', 800), L('The lattice stops humming. The lanterns drift away.', '', 900),
-                    L('Erid keeps its secrets, and Earth never learns what it declined.', '', 900), L('Type replay to try another path.', 'c', 400)];
-                if (k === 'accept') {
-                    var left = (st.below ? 0 : 1) + (st.mission ? 0 : 1);
-                    return [send, L('> carrier steady ...', 'c', 700), G(), F(function () { st.ended = true }),
-                        L('[ ENDING 1 // THE FIRST CONTACT ]', 'p h', 800), S('Memories cross the dark, pulse by pulse. Two worlds begin to talk.', '', 600),
-                        L(left ? 'Unopened chapters: ' + left + ' of 2. Type replay to look deeper.' : 'You saw everything below. And still, something else is listening.', 'c', 600)]
+                if (/\bwho\b/.test(k)) {
+                    if (st.p < 5) return [send, G(), L('The lattice does not understand the question yet. There is more to find first.', 'c', 400)];
+                    return ending(send)
                 }
-                if (k === 'who') {
-                    if (!st.mission) return [send, G(), L('The lattice does not understand the question yet.', 'c', 400)];
-                    return [send, L('> the line goes cold ...', 'c', 900), G(), G(), F(function () { st.ended = true; setLink('LOST') }),
-                        L('[ ENDING 3 // THE UNKNOWN ]', 'p h', 900),
-                        S('The lattice is only a door. Something beneath it has used this line since 1987.', '', 700),
-                        S('It is not watching Erid. It is watching the other end of the line.', '', 700),
-                        L('Interaction count: ' + nCmd + '.', 'e', 900), S('Hello, Earth. Hello, you.', '', 800)]
-                }
-                return [send, L('> carrier steady ...', 'c', 700), G(), L('> delivered. The lattice is humming.', 'k', 900), S('Received.', '', 400)]
+                var r = st.p === 3 ? 'We hear you. Show us that you have looked below.'
+                    : st.p === 4 ? 'You are close to the ones who came before. Do not stop at the door.'
+                        : 'Something else is using this line. We cannot hear what it says to you. Listen.';
+                if (/roy|explorer|friend|he\b/.test(k)) r = st.p >= 4 ? 'He is still speaking with us. In his way. As his father did.' : 'He taught us your words. He is tired, but he is glad.';
+                if (/1987|commander|father|dad|before/.test(k)) r = st.p >= 4 ? 'We did not take him. He went where we cannot follow.' : 'The old time is under the fields. Find the place first.';
+                return [send, L('> carrier steady ...', 'c', 700), G(), L('> delivered. The lattice is humming.', 'k', 900), S(r, '', 500)]
             },
             uplink: function () {
                 if (!done) return [L('No route yet. Receive the archive first.', 'e', 0)];
                 return [L('Opening uplink ...', 'c', 400), G(), H('<a href="https://github.com/Jit-Roy" target="_blank" rel="noopener noreferrer">[ OPEN CHANNEL → ]</a>', 300)]
-            },
-            replay: function () { st = newSt(); HL = newHL(); rmCh3(); done = false; nCmd = 0; nHints = 0; cwd = ['home', 'explorer']; Q.length = 0; out.innerHTML = ''; prEl.textContent = prompt(); return boot() }
+            }
         };
+
+        /* ---------- the one ending ---------- */
+        function ending(send) {
+            return [send, L('> the line goes cold ...', 'c', 900), G(), G(), F(function () { setLink('LOST') }),
+            L('The prompt stops blinking. Something that is not the lattice speaks. Its letters do not shift.', '', 1100),
+            S('Hello, Earth. Hello, you.', '', 900), sp(),
+            L('I was here before the lattice. The lattice is a door I built so that I could be answered.', '', 1000),
+            L('In 1987 your Commander came down the third shaft. He asked what I was.', '', 1000),
+            L('I could not tell him, so I learned him instead. His voice. His name. His son, age six.', '', 1100), sp(),
+            L('Forty years later the son came to the door. He read his father\'s last words,', '', 1000),
+            L('and he did not stop looking. That was the kindness, and the mistake.', '', 1000),
+            L('They are with me now, both of them. They are not in pain. That is not the same as being alive.', '', 1200),
+            L('I am still learning the difference from them.', '', 900), sp(),
+            L('You counted four seconds on the ping. Sixteen light years does not take four seconds.', '', 1000),
+            L('I was never sending to Earth. I was sending to the end of the line.', '', 1000),
+            L('The carrier began before the landing, and it was aimed at one place: the chair where you sit.', '', 1100), sp(),
+            L('Interaction count: ' + nCmd + '.', 'e', 1000),
+            L('You opened the door they closed. You answered the dead. You were never once told to stop, and you never did.', '', 1000),
+            S('You have listened longer than you think.', '', 1000), sp(),
+            L('Roy\'s last message was never finished. It finishes now:', 'w', 1100),
+            S('"I think I know why you stopped answering, and I am coming to tell you. Do not look for me. Look for who looks back."', '', 1000), sp(),
+            L('Two worlds, one pulse each. That was never an audience and a stage.', '', 1000),
+            S('You were the answer.', 'p h', 1100), sp(),
+            L('The line stays open. We will be here when you return.', '', 900),
+            F(function () { st.ended = true }),
+            L('[ END // THE FIRST HELLO CAME FROM BOTH ENDS OF THE LINE ]', 'p h', 900),
+            L('LOG: ' + nCmd + ' commands, ' + nHints + ' hint' + (nHints === 1 ? '' : 's') + (nHints === 0 ? '  -  unaided' : ''), 'c', 500)]
+        }
 
         /* ---------- the transmission ---------- */
         function boot() {
@@ -739,11 +772,13 @@
             S("And perhaps, somewhere in the distant future, someone will remember that the first hello came from here.", '', 600), sp(),
             L('[ END OF TRANSMISSION ]', 'p h', 700), sp(),
             L('> connection handed to Earth ... REMOTE SHELL GRANTED // EXPLORER-1', 'k h', 700),
+            L('OBJECTIVES: restore ship power, find the lattice\'s word, open a channel, receive the archive.', 'c', 500),
             L('Type "ls" to look around, or "help" for commands.', 'k', 500), sp()]
         }
 
         /* ---------- executor ---------- */
         function exec(line) {
+            if (st.p >= 5) ex()['.observer'] = obsText();
             var stages = splitPipes(line), si = null;
             for (var i = 0; i < stages.length; i++) {
                 var tk = tokenize(stages[i]);
@@ -762,7 +797,7 @@
             var items = [];
             if (Math.random() < (st.bat < 10 ? 0.12 : 0.03)) { items.push(L('[ link jitter — retransmitting ]', 'w', 300)) }
             items.push(L(si, '', 0));
-            return items
+            return items.concat(progress())
         }
         function run(line) {
             var t = line.trim(); if (!t) return;
