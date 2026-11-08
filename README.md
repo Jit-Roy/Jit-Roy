@@ -1,5 +1,7 @@
 <div align="center">
   <img src="assets/sleepy_boy.gif" alt="Anime boy with headphones dozing off, then waking up" width="220">
+  <br><br>
+
   <a href="https://jit-roy.github.io/Jit-Roy/">
     <img src="https://img.shields.io/badge/TRANSMITTER-2%25%20CRITICAL-red?style=for-the-badge&logo=satellite&logoColor=white" alt="Transmitter Battery: 2% Critical" />
   </a>
@@ -32,8 +34,6 @@
 > Hello... ▒░#%/\|:;\*? Can anyone hear me?
 >
 > If you're reading this, then the transmission somehow made it through.  
-> Hi, its Roy. I'm an explorer from Earth, currently somewhere beyond the reach of anything familiar.
->
 > I've discovered something out here. Something extraordinary.  
 > There is a civilization on this planet. Not human, not biological, but undeniably intelligent.  
 > I've spent what feels like a lifetime trying to understand them. And I think... perhaps they are beginning to understand me too.  
@@ -59,6 +59,8 @@
 > connection handed to Earth ... REMOTE SHELL GRANTED // EXPLORER-1
 earth@explorer-1:~$ _
 ```
+
+---
 
 <div align="center">
 
